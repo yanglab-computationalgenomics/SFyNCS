@@ -110,8 +110,8 @@ while(<IN>){
     foreach my $read (@Split_reads_tophat){
         next if $read eq "NA";
         system("echo $read >temp_reads.tsv");
-        system('grep -A 1 -f temp_reads.tsv potential_candidates_reads_1.fq | grep -v "^--$" | sed "/^@/ s#^@#>#;/^>/ s#\$#_1#" >temp_reads.fa');
-        system('grep -A 1 -f temp_reads.tsv potential_candidates_reads_2.fq | grep -v "^--$" | sed "/^@/ s#^@#>#;/^>/ s#\$#_2#" >>temp_reads.fa');
+        system('grep -A 1 -f temp_reads.tsv selected_discordant_reads_1.fastq | grep -v "^--$" | sed "/^@/ s#^@#>#;/^>/ s#\$#_1#" >temp_reads.fa');
+        system('grep -A 1 -f temp_reads.tsv selected_discordant_reads_2.fastq | grep -v "^--$" | sed "/^@/ s#^@#>#;/^>/ s#\$#_2#" >>temp_reads.fa');
         
         my @BLAT=`blat -t=dna -q=dna -stepSize=5 -repMatch=2253 -minScore=20 -minIdentity=0 -noHead temp_artifact.fa temp_reads.fa /dev/stdout | grep -v "^[a-zA-Z]"`;
         next if @BLAT==0;
