@@ -501,7 +501,7 @@ sub usage{
     my $scriptName = basename $0;
 print <<HELP;
 This script was used to get blat supported statistics
-Usage: perl $scriptName input >output 2>debug
+Usage: perl $scriptName input >output
 Options:
 
     -s --slop_length		Slop Length, read align within this slop_length of breakpoint will support the breakpoint [default: $slop_length]
