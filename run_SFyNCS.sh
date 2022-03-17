@@ -28,7 +28,7 @@ EOF
 
 [ $# -eq 0 ] && usage
 
-threadNum=1
+thread_number=1
 output_directory=$PWD
 
 while getopts "a:g:o:p:s:t:h" OPTION
