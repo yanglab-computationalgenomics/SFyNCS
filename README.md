@@ -30,7 +30,7 @@ STAR --runThreadN 15 --runMode genomeGenerate --genomeDir /path/to/directory/to/
 ```
 bowtie-build /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files
 ```
-3. Gene annotation contain 6 columns and must have header. Start and End are 1-base. X chromosome should be chrX and y chromosome should be chrY.
+3. Gene annotation contain 6 columns and must have header. Start and End are 1-base. X chromosome should be chrX and Y chromosome should be chrY.
 ```
 Chr     Start       End         Strand      Symbol      Gene_type
 chr7    55019021    55211628    +           EGFR        protein_coding
