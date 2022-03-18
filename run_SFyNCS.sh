@@ -141,7 +141,7 @@ tophat --no-coverage-search \
     --read-edit-dist 4 \
     --splice-mismatches 2 \
     --max-insertion-length 4 \
-    --max-deletion-length4 \
+    --max-deletion-length 4 \
     --segment-mismatches 3 \
     --fusion-read-mismatches 4 \
     -o tophat_out \
