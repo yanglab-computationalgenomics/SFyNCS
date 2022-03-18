@@ -129,7 +129,7 @@ rm cluster.tsv format_chimeric.tsv merge_adjacent.tsv no_duplicate.tsv no_multip
 # 3. process preliminary fusions with tophat
 echo "Step 3: Processing with Tophat"
 cut -f11,12 preliminary_candidates.tsv | sed "s#\t#\n#;s#,#\n#g" | grep -vw "NA" | grep -vP "Split_reads|Read_pairs" | sort | uniq >selected_discordant_reads.tsv
-perl $toolDir/select_fq.pl selected_discordant_reads.tsv 1.fastq 2.fastq >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
+perl $toolDir/select_fastq.pl selected_discordant_reads.tsv 1.fastq 2.fastq >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
 rm selected_discordant_reads.tsv
 
 tophat --no-coverage-search \
