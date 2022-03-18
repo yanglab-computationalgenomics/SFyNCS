@@ -35,7 +35,7 @@ bowtie-build /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/file
 Chr     Start       End         Strand      Symbol      Gene_type
 chr7    55019021    55211628    +           EGFR        protein_coding
 ```
-4. SFyNCS can be run as:
+4. SFyNCS can be run by following command. User can further provide "-p thread_numbers" to speed the step of STAR and Tophat.
 ```
 /path/to/run_SFyNCS.sh -o /path/to/output/direcotry -a /path/to/gene_annotation_file -g /path/to/fasta -s /path/to/directory/to/store/STAR/index/files -t /path/to/directory/to/store/Tophat/index/files
 ```
