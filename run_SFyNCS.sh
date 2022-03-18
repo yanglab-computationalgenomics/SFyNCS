@@ -150,7 +150,7 @@ tophat --no-coverage-search \
     selected_discordant_reads_1.fastq selected_discordant_reads_2.fastq
 ln -s tophat_out/accepted_hits.bam tophat.bam
 samtools index tophat.bam
-perl $toolDir/processe_read_supported_by_tophat.pl tophat.bam preliminary_candidates.tsv >processed_with_tophat.tsv
+perl $toolDir/processe_by_tophat.pl tophat.bam preliminary_candidates.tsv >processed_with_tophat.tsv
 # split_read_tophat >=1 && read_pair_tophat>=1 &&  split_read_tophat+read_pair_tophat>=3
 awk 'NR==1 || ($8>0 && $9>0 && $8+$9>=3)' processed_with_tophat.tsv >temp.tsv
 mv temp.tsv processed_with_tophat.tsv
@@ -181,8 +181,8 @@ for i in {1..50}
   do
     cd chunk_${i}
     ln -s ../selected_discordant_reads_1.fastq .
-    ln -s ../selected_discordant_reads_1.fastq .
-    perl $toolDir/processe_read_supported_by_blat.pl -f $genome_fasta processed_with_tophat.tsv >processed_with_blat.tsv
+    ln -s ../selected_discordant_reads_2.fastq .
+    perl $toolDir/processe_by_blat.pl -f $genome_fasta processed_with_tophat.tsv >processed_with_blat.tsv
     # split_read_blat >=1 && split_read_blat+read_pair_tophat>=3 && (already fulfillment: read_pair_tophat>=1)
     awk 'NR==1 || ($8>0 && $8+$9>=3)' processed_with_blat.tsv >temp.tsv
     mv temp.tsv processed_with_blat.tsv
