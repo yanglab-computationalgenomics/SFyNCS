@@ -120,8 +120,10 @@ perl $toolDir/merge_ajacent_breakpoints.pl no_duplicate.tsv >merge_adjacent.tsv
 perl $toolDir/cluster_discordant_reads.pl merge_adjacent.tsv >cluster.tsv
 awk 'BEGIN{FS=OFS="\t"} NR>1{print $1,$2-1,$2,$3,$7,$8,$9; print $4,$5-1,$5,$6,$7,$8,$9;}' cluster.tsv | sort -k1,1 -k2,2n | uniq >temp_cluster.bed
 perl $toolDir/identify_fusion_candidates_from_cluster_reads.pl cluster.tsv >preliminary_candidates.tsv
-# split_read >=1 && read_pair>=1 && split_read+read_pair>=3, remove chrM related fusions
-awk 'NR==1 || ($9>0 && $10>0 && $9+$10>=3)' preliminary_candidates.tsv | grep -v chrM >temp.tsv
+# split_read >=1 && read_pair>=1 && split_read+read_pair>=3, remove chrM related fusions,  some reads not align correctly with read_pair>=1 && split_read+read_pair>=3 (TCGA-BT-A3PJ-01A-21R-A220-07, UNC14-SN744:245:C0WYWACXX:1:2204:5085:43661)
+# awk 'NR==1 || ($9>0 && $10>0 && $9+$10>=3)' preliminary_candidates.tsv | grep -v chrM >temp.tsv
+# split_read >=1, remove chrM related fusions
+awk 'NR==1 || $9>0' preliminary_candidates.tsv | grep -v chrM >temp.tsv
 mv temp.tsv preliminary_candidates.tsv
 rm cluster.tsv format_chimeric.tsv merge_adjacent.tsv no_duplicate.tsv no_multiple-mapped.tsv
 
