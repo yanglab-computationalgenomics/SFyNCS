@@ -25,6 +25,7 @@ git clone https://github.com/yanglab-computationalgenomics/SFyNCS.git
 SFyNCS requir fastq, STAR index, Tophat index, genome fasta and gene annotation to identified fusion.
 1. STAR index can be builded by following command and please refer to [STAR](https://github.com/alexdobin/STAR) for more detail. Although SFyNCS can run with unlocalized/unplaced sequences, we sugget use chr1-chr22, chrX, chrY and chrM fasta.
 ```
+mkdir -p /path/to/directory/to/store/STAR/index/files
 STAR --runThreadN 15 --runMode genomeGenerate --genomeDir /path/to/directory/to/store/STAR/index/files --genomeFastaFiles /path/to/genome/fasta
 ```
 2. Tophat index can be builded by following command.
