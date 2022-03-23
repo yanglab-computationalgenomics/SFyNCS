@@ -78,10 +78,10 @@ For gene with multiple transcripts, the longest transcript defined as total leng
 - fusion_region_type--fusion_region_type (e.g. 3'UTR--non_coding, it can be one of "intergenic", "non_coding", "5'UTR", "3'UTR", "cds")
 - fusion position (e.g. chr2:200:---chr1:110:+, this information only provid in scenario below):
 ```
-           chr1:110+    chr2:200:-
-    -----------|          |-----------
-gene_A --->                  ---> gene_B    (---> is genes' orientation)
-gene_C <---                  <--- gene_D    (<--- is genes' orientation)
+           chr1:110+         chr2:200:-
+    -----------|                 |-----------
+       gene_A --->             ---> gene_B    (---> is genes' orientation)
+       gene_C <---             <--- gene_D    (<--- is genes' orientation)
 
 There are two potential fusions: gene_A--gene_B fusion and gene_D--gene_C fusion, fusion position will added to gene_D--gene_C to keep one row only in output and it would be like: gene_D--gene_C,transcript_id_D--transcript_id_C,gene_type_D--gene_type_C,breakpoint_position_D--breakpoint_position_C,fusion_region_type_D--fusion_region_type_C,chr2:200:---chr1:110:+
 ```
