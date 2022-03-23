@@ -50,7 +50,10 @@
 # column 19: sd of (discordant read)% in each of cluster (right)
 # column 20: split reads (processed by tophat and blat)
 # column 21: read pairs (processed by tophat)
-
+# column 22: overlapped cluster ids (left)
+# column 23: overlapped cluster ids (right)
+# column 24: total reads in each cluster (left)
+# column 25: total reads in each cluster (right)
 
 use strict;
 use 5.010;
@@ -93,7 +96,9 @@ say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right",
      "Total_clusters_(left)", "Total_clusters_(right)", "Total_clusters_(merge)",
      "(discordant_reads)%_support_fusion",
      "SD_(discordant_reads)%_in_clusters_(left)", "SD_(discordant_reads)%_in_clusters_(right)",
-     "Split_reads_(tophat_and_blat)", "Read_pairs_(tophat)");
+     "Split_reads_(tophat_and_blat)", "Read_pairs_(tophat)",
+     "Cluster_ids_left", "Cluster_ids_right",
+     "Total_reads_in_each_cluster_left", "Total_reads_in_each_cluster_right");
 
 open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
 # input have header
@@ -106,8 +111,8 @@ while(<IN>){
         $identity_output, $minimum_blat_distance_left, $minimum_blat_distance_right,
         $split_reads_blat, $read_pairs_tophat,
         $blat_distance_left_output, $blat_distance_right_output)=split "\t", $_;
-    my ($total_clusters_left, $percentage_discordant_read_in_each_cluster_left, $all_discordant_reads_left, $clusters_left)=&get_cluster_and_discordant_statistics($chr_left, $pos_left, $strand_left, $cluster_id);
-    my ($total_clusters_right, $percentage_discordant_read_in_each_cluster_right, $all_discordant_reads_right, $clusters_right)=&get_cluster_and_discordant_statistics($chr_right, $pos_right, $strand_right, $cluster_id);
+    my ($total_clusters_left, $percentage_discordant_read_in_each_cluster_left, $all_discordant_reads_left, $clusters_left, $cluster_ids_left, $total_reads_in_each_cluster_left)=&get_cluster_and_discordant_statistics($chr_left, $pos_left, $strand_left, $cluster_id);
+    my ($total_clusters_right, $percentage_discordant_read_in_each_cluster_right, $all_discordant_reads_right, $clusters_right, $cluster_ids_right, $total_reads_in_each_cluster_right)=&get_cluster_and_discordant_statistics($chr_right, $pos_right, $strand_right, $cluster_id);
     
     my $key_left=join ":", ($chr_left, $pos_left, $strand_left);
     my $key_right=join ":", ($chr_right, $pos_right, $strand_right);
@@ -163,7 +168,9 @@ while(<IN>){
         $total_clusters_left, $total_clusters_right, $total_clusters,
         $percentage_support_fusion,
         $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
-        $split_reads_blat, $read_pairs_tophat);
+        $split_reads_blat, $read_pairs_tophat,
+        $cluster_ids_left, $cluster_ids_right,
+        $total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right);
 }
 close(IN);
 
@@ -185,14 +192,20 @@ sub get_cluster_and_discordant_statistics{
     my $all_discordant_reads=join ",",(keys %temp_hash);
     my $total_discordant_reads=split ",", $all_discordant_reads;
     my $percentage_discordant_read_in_each_cluster="NA";
+    my $cluster_ids="NA";
+    my $total_reads_in_each_cluster="NA";
     foreach my $temp_cluster_id (@Clusters){
         my $total_cluster_reads=keys %{$overlapped_discordant_reads{$temp_key}{"cluster_reads"}{$temp_cluster_id}};
         my $temp_percentage=sprintf("%.2f", $total_cluster_reads/$total_discordant_reads);
         $percentage_discordant_read_in_each_cluster.=",".$temp_percentage;
+        $cluster_ids.=",".$temp_cluster_id;
+        $total_reads_in_each_cluster.=",".$total_cluster_reads;
     }
     
     $percentage_discordant_read_in_each_cluster=~s/NA,//;
-    return ($total_clusters, $percentage_discordant_read_in_each_cluster, $all_discordant_reads, $clusters);
+    $cluster_ids=~s/NA,//;
+    $total_reads_in_each_cluster=~s/NA,//;
+    return ($total_clusters, $percentage_discordant_read_in_each_cluster, $all_discordant_reads, $clusters, $cluster_ids, $total_reads_in_each_cluster);
 }
 
 sub get_sd{
