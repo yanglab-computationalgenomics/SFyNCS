@@ -40,6 +40,9 @@
 # column 11: minimum distance of read pair to right breakpoint 
 # column 12: split reads (processed by tophat)
 # column 13: read pairs (processed by tophat)
+# column 14: distance of read pair to left breakpoint
+# column 15: distance of read pair to right breakpoint
+
 
 use strict;
 use 5.010;
@@ -73,7 +76,8 @@ close(IN);
 say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right", "Strand_right", "Cluster_id",
     "Split_read_count_(tophat)", "Read_pair_count_(tophat)",
     "Minimum_read_distance_to_left", "Minimum_read_distance_to_right",
-    "Split_reads_(tophat)", "Read_pairs_(tophat)");
+    "Split_reads_(tophat)", "Read_pairs_(tophat)",
+    "Read_pair_distance_to_left", "Read_pair_distance_to_right");
 open IN, $ARGV[1] or die "Can't open $ARGV[1]:$!";
 # input have header
 <IN>;
@@ -291,7 +295,8 @@ while(<IN>){
     say join "\t", ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $cluster_id,
         $split_read_count_tophat, $read_pair_count_tophat,
         $min_distance_left, $min_distance_right,
-        $split_reads_tophat, $read_pairs_tophat);
+        $split_reads_tophat, $read_pairs_tophat,
+        $read_distance_to_left, $read_distance_to_right);
 }
 close(IN);
 
