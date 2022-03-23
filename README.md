@@ -42,6 +42,15 @@ ENST00000485503.1       chr7    +         55192810                  55200802    
 /path/to/run_SFyNCS.sh -o /path/to/output/direcotry -a /path/to/gene_annotation_file -g /path/to/fasta -s /path/to/directory/to/store/STAR/index/files -t /path/to/directory/to/store/Tophat/index/files
 ```
 
+#### Example
+```
+1. Download data
+prefetch --output-directory $PWD -X 40G -p SRR1548811
+fastq-dump --split-3 SRR1548811.sra
+
+
+```
+
 #### Output
 The output is a tab-delimited file named "fusions.tsv" with the following format:
 | Chr_1 | Breakpoint_1 | Strand_1 | Chr_2 | Breakpoint_2 | Strand_2 | Split_read_count_(Tophat_and_Blat) | Read_pair_count_(Tophat) | Minimum_read_distance_to_left | Minimum_read_distance_to_right | Identity | Minimum_blat_distance_to_1 | Minimum_blat_distance_to_2 | Total_clusters_1 | Total_clusters_2 | Total_clusters_(merge) | (discordant_reads)%\_support_fusion | SD_(discordant_reads)%\_in_clusters_1 | SD_(discordant_reads)%\_in_clusters_2 | Fusion_annotations | Split_reads_(tophat_and_blat) | Read_pairs_(tophat) |
