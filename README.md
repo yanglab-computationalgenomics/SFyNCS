@@ -70,7 +70,7 @@ The output is a tab-delimited file named "fusions.tsv" with the following format
 21. **Split_reads_(tophat_and_blat):** split reads (processed by tophat and blat) <br>
 22. **Read_pairs_(tophat):** read pairs (processed by tophat) <br>
 
-For gene with multiple transcripts, the transcript with longest exon was used in generating annotation in column **Fusion_annotations**. If there are more than two genes overlapped with fusion, they are seperated by ";". Each pair gene are seperated by "," and in the format of:
+For gene with multiple transcripts, the longest transcript defined as total length of exons was used in generating column **Fusion_annotations**. If there are more than two genes overlapped with fusion, they are seperated by ";". Each pair gene are seperated by "," and in the format of:
 - symbol--symbol (e.g. AC026954.2--GPS2P1, will be "unannotated" if no annotated genes)
 - transcript_id--transcript_id (e.g. ENST00000575474.1--ENST00000411761.2, will be "unannotated" if no annotated genes)
 - gene_type--gene_type (e.g. protein_coding_gene--non_coding_gene, will be "unknown" if no annotated genes)
@@ -80,8 +80,8 @@ For gene with multiple transcripts, the transcript with longest exon was used in
 ```
            chr1:110+    chr2:200:-
     -----------|          |-----------
-gene_A --->                  ---> gene_B
-gene_C <---                  <--- gene_D
+gene_A --->                  ---> gene_B    (---> is genes' orientation)
+gene_C <---                  <--- gene_D    (<--- is genes' orientation)
 
 There are two potential fusions: gene_A--gene_B fusion and gene_D--gene_C fusion, fusion position will added to gene_D--gene_C to keep one row only in output and it would be like: gene_D--gene_C,transcript_id_D--transcript_id_C,gene_type_D--gene_type_C,breakpoint_position_D--breakpoint_position_C,fusion_region_type_D--fusion_region_type_C,chr2:200:---chr1:110:+
 ```
