@@ -76,7 +76,7 @@ For gene with multiple transcripts, the longest transcript defined as total leng
 - gene_type--gene_type (e.g. protein_coding_gene--non_coding_gene, will be "unknown" if no annotated genes)
 - breakpoint_position--breakpoint_position (e.g. exon--exon, it can be one of "intergenic", "intron", "exon", "split_site")
 - fusion_region_type--fusion_region_type (e.g. 3'UTR--non_coding, it can be one of "intergenic", "non_coding", "5'UTR", "3'UTR", "cds"). If the type is "cds--cds", "in-frame" or "frame-shift" will be added (e.g. cds--cds_(in-frame)) 
-- fusion position (e.g. chr2:200:---chr1:110:+, this information only provid in scenario below):
+- fusion position (e.g. chr2:200:---chr1:110:+, this information will be provided in scenario below only):
 ```
            chr1:110+         chr2:200:-
     -----------|                 |-----------
