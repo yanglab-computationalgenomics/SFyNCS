@@ -48,6 +48,10 @@
 # column 19: sd of (discordant read)% in each of cluster (right)
 # column 20: split reads (processed by tophat and blat)
 # column 21: read pairs (processed by tophat)
+# column 22: overlapped cluster ids (left)
+# column 23: overlapped cluster ids (right)
+# column 24: total reads in each cluster (left)
+# column 25: total reads in each cluster (right)
 
 # 3. Output
 # column 1: chromosome of the left segment
@@ -140,7 +144,9 @@ while(<IN>){
         $total_clusters_left, $total_clusters_right, $total_clusters,
         $percentage_support_fusion,
         $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
-        $split_reads_blat, $read_pairs_tophat)=split "\t", $_;
+        $split_reads_blat, $read_pairs_tophat,
+	$cluster_ids_left, $cluster_ids_right,
+        $total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right)=split "\t", $_;
     
     my (@Transcripts_left, @Transcripts_right);
     my $temp_key=join ";", ($chr_left, $pos_left);
