@@ -5,6 +5,7 @@ SFyNCS detect fusion transcripts from pair-end RNA-seq data
 - Unix/Linux system
 - Blat (testing with v35)
 - Bedtools (testing with v2.27.1)
+- Bowtie2 (testing with v2.2.5)
 - Perl (5.010 or above)
 - STAR (testing with 2.7.0f)
 - Tophat (testing with v2.1.0)
@@ -30,10 +31,10 @@ STAR --runThreadN 15 --runMode genomeGenerate --genomeDir /path/to/directory/to/
 ```
 bowtie-build /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files
 ```
-3. Gene annotation contain 6 columns and must have header. Start and End are 1-base. X chromosome should be chrX and Y chromosome should be chrY.
+3. Gene annotation is in [Gene Predictions (Extended)](https://genome.ucsc.edu/FAQ/FAQformat.html#format9) format and header is needed (can be any artifact header). X chromosome should be chrX and Y chromosome should be chrY.
 ```
-Chr     Start       End         Strand      Symbol      Gene_type
-chr7    55019021    55211628    +           EGFR        protein_coding
+Transcript_id           Chr     Strand   Transcript_start_position  Transcript_end_position CDS_start_position  CDS_end_position  Exon_count    Exon_starts                     Exon_ends                     Score   Symbol  CDS_start_stat  CDS_end_stat  Exon_frame
+ENST00000485503.1       chr7    +         55192810                  55200802                55200802            55200802          3             55192810,55198716,55200315,     55192841,55198863,55200802,   0       EGFR    none            none          -1,-1,-1,
 ```
 4. SFyNCS can be run by following command. User can further provide "-p thread_numbers" to speed the step of STAR and Tophat.
 ```
@@ -44,7 +45,7 @@ chr7    55019021    55211628    +           EGFR        protein_coding
 The output is a tab-delimited file named "fusions.tsv" with the following format:
 | Chr_left | Pos_left | Strand_left | Chr_right | Pos_right | Strand_right | Split_read_count_(Tophat_and_Blat) | Read_pair_count_(Tophat) | Minimum_read_distance_to_left | Minimum_read_distance_to_right | Identity | Minimum_blat_distance_to_left | Minimum_blat_distance_to_right | Total_clusters_(left) | Total_clusters_(right) | Total_clusters_(merge) | (discordant_reads)%\_support_fusion | SD_(discordant_reads)%\_in_clusters_(left) | SD_(discordant_reads)%\_in_clusters_(right) | Fusion_annotations | Split_reads_(tophat_and_blat) | Read_pairs_(tophat) |
 | :-- | :-- | :-- | :-- | :-- | :--  | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| chr9 | 2876236 | + | chr17 | 7314362 | -  | 1 | 2 | 99 | 0 | 0.59 | 0 | 0 | 2 | 6 | 7 | 0.05 | 0.36 | 0.29 | AC026954.2_(protein_coding)--GPS2P1_(processed_pseudogene);GPS2_(protein_coding)--GPS2P1_(processed_pseudogene) | UNC11-SN627:278:D1LY0ACXX:7:1308:7484:19502 | UNC11-SN627:278:D1LY0ACXX:7:1205:12470:97470,UNC11-SN627:278:D1LY0ACXX:7:1305:18043:40271 |
+| chr17 | 7314362 | - | chr9 | 2876236 | +  | 1 | 2 | 99 | 0 | 0.59 | 0 | 0 | 2 | 6 | 7 | 0.05 | 0.36 | 0.29 | AC026954.2--GPS2P1,ENST00000575474.1--ENST00000411761.2,protein_coding_gene--non_coding_gene,exon--exon,3'UTR--non_coding;GPS2--GPS2P1,ENST00000571697.5--ENST00000411761.2,non_coding_gene--non_coding_gene,exon--exon,non_coding--non_coding | UNC11-SN627:278:D1LY0ACXX:7:1308:7484:19502 | UNC11-SN627:278:D1LY0ACXX:7:1205:12470:97470,UNC11-SN627:278:D1LY0ACXX:7:1305:18043:40271 |
 
 1. **Chr_left:** chromosome of the left segment <br>
 2. **Pos_left:** left segment site <br>
@@ -68,4 +69,20 @@ The output is a tab-delimited file named "fusions.tsv" with the following format
 20. **Fusion_annotations:** fusion annotations <br>
 21. **Split_reads_(tophat_and_blat):** split reads (processed by tophat and blat) <br>
 22. **Read_pairs_(tophat):** read pairs (processed by tophat) <br>
+
+For gene with multiple transcripts, the transcript with longest exon was used in generating annotation in column **Fusion_annotations**. If there are more than two genes overlapped with fusion, they are seperated by ";". Each pair gene are seperated by "," and in the format of:
+- symbol--symbol (e.g. AC026954.2--GPS2P1, will be "unannotated" if no annotated genes)
+- transcript_id--transcript_id (e.g. ENST00000575474.1--ENST00000411761.2, will be "unannotated" if no annotated genes)
+- gene_type--gene_type (e.g. protein_coding_gene--non_coding_gene, will be "unknown" if no annotated genes)
+- breakpoint_position--breakpoint_position (e.g. exon--exon, it can be one of "intergenic", "intron", "exon", "split_site")
+- fusion_region_type--fusion_region_type (e.g. 3'UTR--non_coding, it can be one of "intergenic", "non_coding", "5'UTR", "3'UTR", "cds")
+- fusion position (e.g. chr2:200:---chr1:110:+, this information only provid in scenario below):
+```
+           chr1:110+    chr2:200:-
+    -----------|          |-----------
+gene_A --->                  ---> gene_B
+gene_C <---                  <--- gene_D
+
+There are two potential fusions: gene_A--gene_B fusion and gene_D--gene_C fusion, fusion position will added to gene_D--gene_C to keep one row only in output and it would be like: gene_D--gene_C,transcript_id_D--transcript_id_C,gene_type_D--gene_type_C,breakpoint_position_D--breakpoint_position_C,fusion_region_type_D--fusion_region_type_C,chr2:200:---chr1:110:+
+```
 
