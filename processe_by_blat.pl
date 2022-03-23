@@ -44,7 +44,8 @@
 # column 14: minimum blat distace of right breakpoint (use mean if both read 1 and read 2 are split read)
 # column 15: split reads (processed by tophat and blat)
 # column 16: read pairs (processed by tophat)
-
+# column 17: distace of split read to left breakpoint when blating to artifact reference (use mean if both read 1 and read 2 are split read)
+# column 18: distace of split read to right breakpoint when blating to artifact reference  (use mean if both read 1 and read 2 are split read)
 
 
 use strict;
@@ -77,7 +78,8 @@ say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right",
     "Split_read_count_(tophat_and_blat)", "Read_pair_count_(tophat)", 
     "Minimum_read_distance_to_left", "Minimum_read_distance_to_right",
     "Identity", "Minimum_blat_distance_to_left", "Minimum_blat_distance_to_right",
-    "Split_reads_(tophat_and_blat)", "Read_pairs_(tophat)");
+    "Split_reads_(tophat_and_blat)", "Read_pairs_(tophat)",
+    "Blat_distance_to_left", "Blat_distance_to_right");
 
 
 open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
@@ -177,7 +179,8 @@ while(<IN>){
 		    $split_read_count_blat, $read_pair_count_tophat, 
 		    $min_read_pair_distance_left, $min_read_pair_distance_right,
 		    $identity_output, $minimum_blat_distance_left, $minimum_blat_distance_right,
-		    $split_reads_blat, $read_pairs_tophat);
+		    $split_reads_blat, $read_pairs_tophat,
+		    $blat_distance_left_output, $blat_distance_right_output);
 }
 close(IN);
 system('rm temp_artifact.fa temp_reads.tsv temp_reads.fa');
