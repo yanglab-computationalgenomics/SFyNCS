@@ -70,7 +70,7 @@ The output is a tab-delimited file named "fusions.tsv" with the following format
 21. **Split_reads_(tophat_and_blat):** split reads (processed by tophat and blat) <br>
 22. **Read_pairs_(tophat):** read pairs (processed by tophat) <br>
 
-For gene with multiple transcripts, the longest transcript defined as total length of exons was used in generating column **Fusion_annotations**. If there are more than two genes overlapped with fusion, they are seperated by ";". Each pair gene are seperated by "," and in the format of:
+For gene with multiple transcripts, the longest transcript defined as total length of exons was used in generating column **Fusion_annotations**. If there are more than two genes overlapped with fusion, they are seperated by ";". Each pair gene are seperated by "," and in following format:
 - symbol--symbol (e.g. AC026954.2--GPS2P1, will be "unannotated" if no annotated genes)
 - transcript_id--transcript_id (e.g. ENST00000575474.1--ENST00000411761.2, will be "unannotated" if no annotated genes)
 - gene_type--gene_type (e.g. protein_coding_gene--non_coding_gene, will be "unknown" if no annotated genes)
