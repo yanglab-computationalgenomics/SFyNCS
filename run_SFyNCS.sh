@@ -241,14 +241,16 @@ echo "Step 6: Generating final fusions"
 # fusion_distance>=500kbp && read_pair_distance<=500bp && identity<=0.8 && sd>=0.1 && (already fulfillment: split_read_blat >=1 && read_pair_tophat>=1 && split_read_blat+read_pair_tophat>=3)
 awk -v fusion_distance=500000 'NR==1 || ($9<=500 && $10<=500 && $11<=0.8 && $18>=0.1 && $19>=0.1 && (($1!=$4) || ($1==$4 && $5-$2>=fusion_distance)))' fusion_statistics.tsv >filtered_fusions_statistics.tsv
 perl $toolDir/annotate_fusions.pl $annotation_file filtered_fusions_statistics.tsv >../fusions.tsv
-rm fusion_statistics.tsv filtered_fusions_statistics.tsv
 
-# 7. to do: cocordant statistics
 
-# 8. delete temp directory
+# 7. statistics for fusion with split_read_blat+read_pair_tophat>=3
+perl $toolDir/preliminary_fusion_statistics.pl fusion_statistics.tsv preliminary_candidates.tsv processed_with_tophat.tsv processed_with_blat.tsv >../preliminary_at_least_3_total_reads_fusion_statistics.tsv
+
+# 8. to do: cocordant statistics
+
+# 9. delete temp directory
+cd .. && gzip preliminary_at_least_3_total_reads_fusions_statistics.tsv && rm -rf ${output_directory}/temp_output_SFyNCS
 echo "Finished!"
-cd .. && rm -rf ${output_directory}/temp_output_SFyNCS
-
 
 endTime=$( date +%H:%M:%S)
 echo -e "END:\t$endTime"
