@@ -25,6 +25,8 @@
 # column 11: minimum distance of read pair to right breakpoint 
 # column 12: split reads (processed by tophat)
 # column 13: read pairs (processed by tophat)
+# column 14: distance of read pair to left breakpoint
+# column 15: distance of read pair to right breakpoint
 
 
 # 3. Output
@@ -90,7 +92,8 @@ while(<IN>){
     my ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $cluster_id,
         $split_read_count_tophat, $read_pair_count_tophat,
 	$min_read_pair_distance_left, $min_read_pair_distance_right,
-	$split_reads_tophat, $read_pairs_tophat)=split "\t", $_;
+	$split_reads_tophat, $read_pairs_tophat,
+	$read_distance_to_left, $read_distance_to_right)=split "\t", $_;
     my $split_reads_blat="NA";
     my $split_read_count_blat=0;
     
