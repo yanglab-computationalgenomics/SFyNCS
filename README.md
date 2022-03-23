@@ -30,7 +30,7 @@ STAR --runThreadN 15 --runMode genomeGenerate --genomeDir /path/to/directory/to/
 ```
 2. Tophat index can be builded by following command.
 ```
-bowtie-build /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files
+bowtie2-build /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files
 ```
 3. Gene annotation is in [Gene Predictions (Extended)](https://genome.ucsc.edu/FAQ/FAQformat.html#format9) format and header is needed (can be any artifact header). X chromosome should be chrX and Y chromosome should be chrY.
 ```
