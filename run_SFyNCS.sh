@@ -62,22 +62,28 @@ echo -e "START:\t$startTime"
 
 
 # Generate output directory
-[ -e ${output_directory}/temp_output_SFyNCS ] && echo "Have ${output_directory}/temp_output_SFyNCS, please rename or delete the directory" && exit
-mkdir ${output_directory}/temp_output_SFyNCS && cd ${output_directory}/temp_output_SFyNCS
 fastq_1=$(readlink -f $1)
 fastq_2=$(readlink -f $2)
+annotation_file=$(readlink -f $annotation_file)
+genome_fasta=$(readlink -f $genome_fasta)
+star_index=$(readlink -f $star_index)
+tophat_index=$(readlink -f $tophat_index)
+toolDir=$(readlink -f $0 | xargs dirname)
+[ -e ${output_directory}/temp_output_SFyNCS ] && echo "Have ${output_directory}/temp_output_SFyNCS, please rename or delete the directory" && exit
+mkdir -p ${output_directory}/temp_output_SFyNCS && cd ${output_directory}/temp_output_SFyNCS
 ln -s $fastq_1 1.fastq
 ln -s $fastq_2 2.fastq
 
 
 # 1. Align fastq with STAR
 echo -e "Step 1: Getting discordant information file with STAR"
+mkdir star_output
 STAR --genomeDir $star_index  \
     --readFilesIn 1.fastq 2.fastq  \
     --runThreadN $thread_number \
-    --outFileNamePrefix star_output \
+    --outFileNamePrefix star_output/ \
     --outReadsUnmapped None  \
-    --twopassMode Basic \    
+    --twopassMode Basic \
     --outSAMstrandField intronMotif  \
     --outSAMunmapped Within  \
     --chimSegmentMin 12  \
@@ -112,7 +118,6 @@ fi
 
 # 2. Format and generate preliminary fusions
 echo "Step 2: Generating preliminary fusions"
-toolDir=$(readlink $0 | xargs dirname)
 perl $toolDir/format_STAR_chimeric_file.pl  star_output/Chimeric.out.junction >format_chimeric.tsv
 perl $toolDir/remove_multiple_mapped_reads.pl format_chimeric.tsv >no_multiple-mapped.tsv
 perl $toolDir/remove_duplicate_reads.pl no_multiple-mapped.tsv | sort | uniq >no_duplicate.tsv
@@ -131,7 +136,7 @@ rm cluster.tsv format_chimeric.tsv merge_adjacent.tsv no_duplicate.tsv no_multip
 # 3. process preliminary fusions with tophat
 echo "Step 3: Processing with Tophat"
 cut -f11,12 preliminary_candidates.tsv | sed "s#\t#\n#;s#,#\n#g" | grep -vw "NA" | grep -vP "Split_reads|Read_pairs" | sort | uniq >selected_discordant_reads.tsv
-perl $toolDir/select_fastq.pl selected_discordant_reads.tsv 1.fastq 2.fastq >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
+perl $toolDir/select_fastq.pl -s selected_discordant_reads.tsv 1.fastq 2.fastq >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
 rm selected_discordant_reads.tsv
 
 tophat --no-coverage-search \
@@ -146,11 +151,11 @@ tophat --no-coverage-search \
     --max-deletion-length 4 \
     --segment-mismatches 3 \
     --fusion-read-mismatches 4 \
-    -o tophat_out \
+    -o tophat_output \
     -p $thread_number \
     $tophat_index \
     selected_discordant_reads_1.fastq selected_discordant_reads_2.fastq
-ln -s tophat_out/accepted_hits.bam tophat.bam
+ln -s tophat_output/accepted_hits.bam tophat.bam
 samtools index tophat.bam
 perl $toolDir/processe_by_tophat.pl tophat.bam preliminary_candidates.tsv >processed_with_tophat.tsv
 # split_read_tophat >=1 && read_pair_tophat>=1 &&  split_read_tophat+read_pair_tophat>=3

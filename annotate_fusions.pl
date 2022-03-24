@@ -270,7 +270,7 @@ while(<IN>){
 		$fusion_annotation.=";".$temp_value;
 	    }
 	    foreach my $temp_value (@fusion_to_unannotated_switch_segment){
-		$fusion_annotation.=";".$chr_right.":".$pos_right.":".$strand_right."--".$chr_left.":".$pos_left.":".$strand_left.",".$temp_value;
+		$fusion_annotation.=";".$temp_value.",".$chr_right.":".$pos_right.":".$strand_right."--".$chr_left.":".$pos_left.":".$strand_left;
 	    }
 	}elsif($fusion_to_unannotated_swith_count==0){
 	    foreach my $temp_value (@fusion_to_unannotated){
@@ -298,7 +298,7 @@ while(<IN>){
 		$fusion_annotation.=";".$temp_value;
 	    }
 	    foreach my $temp_value (@sense_fusions_switch_segment){
-		$fusion_annotation.=";".$chr_right.":".$pos_right.":".$strand_right."--".$chr_left.":".$pos_left.":".$strand_left.",".$temp_value;
+		$fusion_annotation.=";".$temp_value.",".$chr_right.":".$pos_right.":".$strand_right."--".$chr_left.":".$pos_left.":".$strand_left;
 	    }
 	}elsif($sense_fusion_switch_count==0){
 	    foreach my $temp_value (@sense_fusions){
