@@ -41,11 +41,13 @@ while(<IN>){
     my $name2=$name;
     $name2=~s/^@//;
     $name2=~s/\s.*// if defined $have_space;
+    my $name3=$name;
+    $name3=~s/\s.*// if defined $have_space;
     chomp(my $seq=<IN>);
     chomp(my $name_2=<IN>);
     chomp(my $qual=<IN>);
     if(exists $hash{$name2}){
-        say $name;
+        say $name3;
         say $seq;
         say $name_2;
         say $qual;
@@ -60,11 +62,13 @@ while(<IN>){
     my $name2=$name;
     $name2=~s/^@//;
     $name2=~s/\s.*// if defined $have_space;
+    my $name3=$name;
+    $name3=~s/\s.*// if defined $have_space;
     chomp(my $seq=<IN>);
     chomp(my $name_2=<IN>);
     chomp(my $qual=<IN>);
     if(exists $hash{$name2}){
-	say STDERR $name;
+	say STDERR $name3;
         say STDERR $seq;
         say STDERR $name_2;
         say STDERR $qual;
