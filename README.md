@@ -41,14 +41,15 @@ ENST00000485503.1       chr7    +         55192810                  55200802    
 ```
 4. SFyNCS can be run by following command. User can further provide "-p thread_numbers" to speed the step of STAR and Tophat.
 ```
-/path/to/run_SFyNCS.sh -o /path/to/output/direcotry -a /path/to/gene_annotation_file -g /path/to/fasta -s /path/to/directory/to/store/STAR/index/files -t /path/to/directory/to/store/Tophat/index/files
+/path/to/run_SFyNCS.sh -o /path/to/output/direcotry -a /path/to/gene_annotation_file -g /path/to/fasta -s /path/to/directory/to/store/STAR/index/files -t /path/to/directory/to/store/Tophat/index/files 1.fastq 2.fastq
 ```
 
 #### Example
 ```
-1. Download data
-prefetch --output-directory $PWD -X 40G -p SRR1548811
-fastq-dump --split-3 SRR1548811.sra
+#1. Download data
+#prefetch --output-directory $PWD -X 40G -p SRR1548811
+#fastq-dump --split-3 SRR1548811.sra
+bash SFyNCS_sherlock/run_SFyNCS.sh -o demo_output -a gencode_v29.gpe -g reference/ref_genome.fa -s reference/star -t reference/tophat/tophat demo_1.fastq demo_2.fastq
 
 
 ```
