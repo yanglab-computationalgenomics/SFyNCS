@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 2022-03-17
+# 2022-04-07
 
 usage(){
  cat << EOF
@@ -20,8 +20,8 @@ Options:
     -h Print this help menu.
 
 Gene annotation format (must have header, start and end are 1-base):
-    Chr     Start       End         Strand      Symbol      Gene_type
-    chr7    55019021    55211628    +           EGFR        protein_coding
+    Transcript_id           Chr     Strand   Transcript_start_position  Transcript_end_position CDS_start_position  CDS_end_position  Exon_count    Exon_starts                     Exon_ends                     Score   Symbol  CDS_start_stat  CDS_end_stat  Exon_frame
+    ENST00000485503.1       chr7    +         55192810                  55200802                55200802            55200802          3             55192810,55198716,55200315,     55192841,55198863,55200802,   0       EGFR    none            none          -1,-1,-1,
 EOF
     exit 0
 }
@@ -99,7 +99,7 @@ STAR --genomeDir $star_index  \
     --chimNonchimScoreDropMin 10  \
     --peOverlapNbasesMin 12 \
     --peOverlapMMp 0.1  \
-    --outSAMtype BAM Unsorted  \
+    --outSAMtype BAM SortedByCoordinate \
     --genomeLoad NoSharedMemory
 
 discordant_count=$(grep -v "^#" star_output/Chimeric.out.junction | wc -l)
@@ -131,6 +131,7 @@ perl $toolDir/identify_fusion_candidates_from_cluster_reads.pl cluster.tsv >prel
 awk 'NR==1 || $9>0' preliminary_candidates.tsv | grep -v chrM >temp.tsv
 mv temp.tsv preliminary_candidates.tsv
 rm cluster.tsv format_chimeric.tsv merge_adjacent.tsv no_duplicate.tsv no_multiple-mapped.tsv
+rm -rf star_output
 
 
 # 3. process preliminary fusions with tophat
@@ -159,7 +160,8 @@ ln -s tophat_output/accepted_hits.bam tophat.bam
 samtools index tophat.bam
 perl $toolDir/processe_by_tophat.pl tophat.bam preliminary_candidates.tsv >processed_with_tophat.tsv
 # split_read_tophat >=1 && read_pair_tophat>=1 &&  split_read_tophat+read_pair_tophat>=3
-awk 'NR==1 || ($8>0 && $9>0 && $8+$9>=3)' processed_with_tophat.tsv >temp.tsv
+#awk 'NR==1 || ($8>0 && $9>0 && $8+$9>=3)' processed_with_tophat.tsv >temp.tsv
+awk 'NR==1 || $10+$11>0' processed_with_tophat.tsv >temp.tsv
 mv temp.tsv processed_with_tophat.tsv
 rm -rf tophat* preliminary_candidates.tsv 
 
@@ -173,16 +175,16 @@ for((i=1; i<50; i++))
   do
     mkdir chunk_${i}
     head -n 1 processed_with_tophat.tsv >chunk_${i}/processed_with_tophat.tsv
-    start=$[ ($i-1)*$chunk+1 ]
-    end=$[ $i*chunk ]
-    sed -n "${start},${end}p" processed_with_tophat.tsv >>chunk_${i}/processed_with_tophat.tsv
+    line_start=$[ ($i-1)*$chunk+1 ]
+    line_end=$[ $i*chunk ]
+    sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_${i}/processed_with_tophat.tsv
   done
 sed -i '1d' chunk_1/processed_with_tophat.tsv
-start=$[ 49*$chunk+1 ]
-end=$lineCount
+line_start=$[ 49*$chunk+1 ]
+line_end=$lineCount
 mkdir chunk_50
 head -n 1 processed_with_tophat.tsv >chunk_50/processed_with_tophat.tsv
-sed -n "${start},${end}p" processed_with_tophat.tsv >>chunk_50/processed_with_tophat.tsv
+sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_50/processed_with_tophat.tsv
 
 for i in {1..50}
   do
@@ -191,7 +193,8 @@ for i in {1..50}
     ln -s ../selected_discordant_reads_2.fastq .
     perl $toolDir/processe_by_blat.pl -f $genome_fasta processed_with_tophat.tsv >processed_with_blat.tsv
     # split_read_blat >=1 && split_read_blat+read_pair_tophat>=3 && (already fulfillment: read_pair_tophat>=1)
-    awk 'NR==1 || ($8>0 && $8+$9>=3)' processed_with_blat.tsv >temp.tsv
+    #awk 'NR==1 || ($8>0 && $8+$9>=3)' processed_with_blat.tsv >temp.tsv
+    awk 'NR==1 || $13>0' processed_with_blat.tsv >temp.tsv
     mv temp.tsv processed_with_blat.tsv
     cd ..
   done
@@ -214,16 +217,16 @@ for((i=1; i<50; i++))
   do
     mkdir chunk_${i}
     head -n 1 processed_with_blat.tsv >chunk_${i}/processed_with_blat.tsv
-    start=$[ ($i-1)*$chunk+1 ]
-    end=$[ $i*chunk ]
-    sed -n "${start},${end}p" processed_with_blat.tsv >>chunk_${i}/processed_with_blat.tsv
+    line_start=$[ ($i-1)*$chunk+1 ]
+    line_end=$[ $i*chunk ]
+    sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_${i}/processed_with_blat.tsv
   done
 sed -i '1d' chunk_1/processed_with_blat.tsv
-start=$[ 49*$chunk+1 ]
-end=$lineCount
+line_start=$[ 49*$chunk+1 ]
+line_end=$lineCount
 mkdir chunk_50
 head -n 1 processed_with_blat.tsv >chunk_50/processed_with_blat.tsv
-sed -n "${start},${end}p" processed_with_blat.tsv >>chunk_50/processed_with_blat.tsv
+sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_50/processed_with_blat.tsv
 
 for i in {1..50}
   do
@@ -240,7 +243,48 @@ for((i=2; i<51; i++))
   done
 rm -rf chunk* temp_cluster.bed
 
+6. annotating and getting final fusions # this is for sherlock, use mark section in final version
+echo "Step 6: Generating final fusions"
+# split file to 50 chunk to redunce memory and speed up processing
+lineCount=$( wc -l fusion_statistics.tsv | cut -f1 -d " " )
+chunk=$( echo "$lineCount/50" | bc )
+for((i=1; i<50; i++))
+  do
+    mkdir chunk_${i}
+    head -n 1 fusion_statistics.tsv >chunk_${i}/fusion_statistics.tsv
+    line_start=$[ ($i-1)*$chunk+1 ]
+    line_end=$[ $i*chunk ]
+    sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_${i}/fusion_statistics.tsv
+  done
+sed -i '1d' chunk_1/fusion_statistics.tsv
+line_start=$[ 49*$chunk+1 ]
+line_end=$lineCount
+mkdir chunk_50
+head -n 1 fusion_statistics.tsv >chunk_50/fusion_statistics.tsv
+sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_50/fusion_statistics.tsv
 
+for i in {1..50}
+  do
+    cd chunk_${i}
+    perl $toolDir/annotate_fusions.pl $annotation_file fusion_statistics.tsv >fusions.tsv
+    cd ..
+  done
+
+cp chunk_1/fusions.tsv ../
+for((i=2; i<51; i++))
+  do
+    sed -n '2,$p' chunk_${i}/fusions.tsv >>../fusions.tsv
+  done
+rm -rf chunk*
+
+cd ..
+rm -rf ${output_directory}/temp_output_SFyNCS
+cut -f1-29 fusions.tsv >fusions_abridged.tsv
+gzip fusions.tsv
+gzip fusions_abridged.tsv
+echo "Finished!"
+
+<<mark
 # 6. annotating and getting final fusions
 echo "Step 6: Generating final fusions"
 # fusion_distance>=500kbp && read_pair_distance<=500bp && identity<=0.8 && sd>=0.1 && (already fulfillment: split_read_blat >=1 && read_pair_tophat>=1 && split_read_blat+read_pair_tophat>=3)
@@ -249,13 +293,16 @@ perl $toolDir/annotate_fusions.pl $annotation_file filtered_fusions_statistics.t
 
 
 # 7. statistics for fusion with split_read_blat+read_pair_tophat>=3
-perl $toolDir/preliminary_fusion_statistics.pl fusion_statistics.tsv preliminary_candidates.tsv processed_with_tophat.tsv processed_with_blat.tsv >../preliminary_at_least_3_total_reads_fusion_statistics.tsv
+perl $toolDir/preliminary_fusion_statistics.pl fusion_statistics.tsv preliminary_candidates.tsv processed_with_tophat.tsv processed_with_blat.tsv >../preliminary_at_least_3_total_reads_fusions_statistics.tsv
 
 # 8. to do: cocordant statistics
+
 
 # 9. delete temp directory
 cd .. && gzip preliminary_at_least_3_total_reads_fusions_statistics.tsv && rm -rf ${output_directory}/temp_output_SFyNCS
 echo "Finished!"
+mark
+
 
 endTime=$( date +%H:%M:%S)
 echo -e "END:\t$endTime"
