@@ -46,12 +46,11 @@ ENST00000485503.1       chr7    +         55192810                  55200802    
 
 #### Example
 ```
-#1. Download data
-#prefetch --output-directory $PWD -X 40G -p SRR1548811
-#fastq-dump --split-3 SRR1548811.sra
-bash SFyNCS_sherlock/run_SFyNCS.sh -o demo_output -a gencode_v29.gpe -g reference/ref_genome.fa -s reference/star -t reference/tophat/tophat demo_1.fastq demo_2.fastq
-
-
+# 1. Build STAR index as above
+# 2. Build Tophat index as above
+# 3. tar -zxvf example_data.tar.gz
+# 4. bash SFyNCS_sherlock/run_SFyNCS.sh -p 1 -o demo_output -a gencode_v29.gpe -g reference/ref_genome.fa -s reference/star -t reference/tophat/tophat example_1.fastq example_2.fastq
+# 5. You should get fusions.tsv.gz and fusions_abridged.tsv.gz under demo_output, please make sure these two output files are same as files under example_output 
 ```
 
 #### Output
