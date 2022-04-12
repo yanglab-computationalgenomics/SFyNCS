@@ -177,9 +177,13 @@ for((i=1; i<50; i++))
     head -n 1 processed_with_tophat.tsv >chunk_${i}/processed_with_tophat.tsv
     line_start=$[ ($i-1)*$chunk+1 ]
     line_end=$[ $i*chunk ]
-    sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_${i}/processed_with_tophat.tsv
+    if [ $chunk -gt 0 ]; then
+        sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_${i}/processed_with_tophat.tsv
+    fi
   done
-sed -i '1d' chunk_1/processed_with_tophat.tsv
+if [ $chunk -gt 0 ]; then
+    sed -i '1d' chunk_1/processed_with_tophat.tsv
+fi
 line_start=$[ 49*$chunk+1 ]
 line_end=$lineCount
 mkdir chunk_50
@@ -219,9 +223,13 @@ for((i=1; i<50; i++))
     head -n 1 processed_with_blat.tsv >chunk_${i}/processed_with_blat.tsv
     line_start=$[ ($i-1)*$chunk+1 ]
     line_end=$[ $i*chunk ]
-    sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_${i}/processed_with_blat.tsv
+    if [ $chunk -gt 0 ]; then
+        sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_${i}/processed_with_blat.tsv
+    fi
   done
-sed -i '1d' chunk_1/processed_with_blat.tsv
+if [ $chunk -gt 0 ]; then
+    sed -i '1d' chunk_1/processed_with_blat.tsv
+fi
 line_start=$[ 49*$chunk+1 ]
 line_end=$lineCount
 mkdir chunk_50
@@ -254,9 +262,13 @@ for((i=1; i<50; i++))
     head -n 1 fusion_statistics.tsv >chunk_${i}/fusion_statistics.tsv
     line_start=$[ ($i-1)*$chunk+1 ]
     line_end=$[ $i*chunk ]
-    sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_${i}/fusion_statistics.tsv
+    if [ $chunk -gt 0 ]; then
+        sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_${i}/fusion_statistics.tsv
+    fi
   done
-sed -i '1d' chunk_1/fusion_statistics.tsv
+if [ $chunk -gt 0 ]; then
+    sed -i '1d' chunk_1/fusion_statistics.tsv
+fi
 line_start=$[ 49*$chunk+1 ]
 line_end=$lineCount
 mkdir chunk_50
