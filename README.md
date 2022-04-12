@@ -32,7 +32,7 @@ STAR --runThreadN 15 --runMode genomeGenerate --genomeDir /path/to/directory/to/
 ```
 bowtie2-build /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files/file_prefix
 # tophat need fasta sequence, make a soft link
-ln -s /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files/file_prefix.fa
+ln -s /path/to/genome/fasta /path/to/directory/to/store/Tophat/index/files/file_prefix.fasta
 ```
 3. Gene annotation is in [Gene Predictions (Extended)](https://genome.ucsc.edu/FAQ/FAQformat.html#format9) format and header is needed (can be any artifact header). X chromosome should be chrX and Y chromosome should be chrY.
 ```
