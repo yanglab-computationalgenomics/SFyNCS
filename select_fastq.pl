@@ -49,7 +49,7 @@ while(<IN>){
     if(exists $hash{$name2}){
         say $name3;
         say $seq;
-        say $name_2;
+        say '+';
         say $qual;
     }
 }
@@ -70,7 +70,7 @@ while(<IN>){
     if(exists $hash{$name2}){
 	say STDERR $name3;
         say STDERR $seq;
-        say STDERR $name_2;
+        say STDERR '+';
         say STDERR $qual;
     }
 }

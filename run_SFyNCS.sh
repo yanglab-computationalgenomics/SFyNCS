@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 2022-04-07
+# 2022-04-12
 
 usage(){
  cat << EOF
@@ -29,6 +29,7 @@ EOF
 [ $# -eq 0 ] && usage
 
 thread_number=1
+current_directory=$PWD
 output_directory=$PWD
 
 while getopts "a:g:o:p:s:t:h" OPTION
@@ -69,6 +70,7 @@ genome_fasta=$(readlink -f $genome_fasta)
 star_index=$(readlink -f $star_index)
 tophat_index=$(readlink -f $tophat_index)
 toolDir=$(readlink -f $0 | xargs dirname)
+output_directory=$(readlink -f $output_directory)
 [ -e ${output_directory}/temp_output_SFyNCS ] && echo "Have ${output_directory}/temp_output_SFyNCS, please rename or delete the directory" && exit
 mkdir -p ${output_directory}/temp_output_SFyNCS && cd ${output_directory}/temp_output_SFyNCS
 ln -s $fastq_1 1.fastq
@@ -117,7 +119,7 @@ fi
 
 
 # 2. Format and generate preliminary fusions
-echo "Step 2: Generating preliminary fusions"
+echo -e "\nStep 2: Generating preliminary fusions"
 perl $toolDir/format_STAR_chimeric_file.pl  star_output/Chimeric.out.junction >format_chimeric.tsv
 perl $toolDir/remove_multiple_mapped_reads.pl format_chimeric.tsv >no_multiple-mapped.tsv
 perl $toolDir/remove_duplicate_reads.pl no_multiple-mapped.tsv | sort | uniq >no_duplicate.tsv
@@ -135,7 +137,7 @@ rm -rf star_output
 
 
 # 3. process preliminary fusions with tophat
-echo "Step 3: Processing with Tophat"
+echo -e "\nStep 3: Processing with Tophat"
 cut -f11,12 preliminary_candidates.tsv | sed "s#\t#\n#;s#,#\n#g" | grep -vw "NA" | grep -vP "Split_reads|Read_pairs" | sort | uniq >selected_discordant_reads.tsv
 perl $toolDir/select_fastq.pl -s selected_discordant_reads.tsv 1.fastq 2.fastq >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
 rm selected_discordant_reads.tsv
@@ -167,7 +169,7 @@ rm -rf tophat* preliminary_candidates.tsv
 
 
 # 4. process preliminary fusions with blat
-echo "Step 4: Processing with Blat"
+echo -e "\nStep 4: Processing with Blat"
 # split file to 50 chunk to redunce memory and speed up processing
 lineCount=$( wc -l processed_with_tophat.tsv | cut -f1 -d " " )
 chunk=$( echo "$lineCount/50" | bc )
@@ -178,16 +180,18 @@ for((i=1; i<50; i++))
     line_start=$[ ($i-1)*$chunk+1 ]
     line_end=$[ $i*chunk ]
     if [ $chunk -gt 0 ]; then
-        sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_${i}/processed_with_tophat.tsv
+      sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_${i}/processed_with_tophat.tsv
     fi
   done
 if [ $chunk -gt 0 ]; then
-    sed -i '1d' chunk_1/processed_with_tophat.tsv
+  sed -i '1d' chunk_1/processed_with_tophat.tsv
 fi
 line_start=$[ 49*$chunk+1 ]
 line_end=$lineCount
 mkdir chunk_50
-head -n 1 processed_with_tophat.tsv >chunk_50/processed_with_tophat.tsv
+if [ $chunk -gt 0 ]; then
+  head -n 1 processed_with_tophat.tsv >chunk_50/processed_with_tophat.tsv
+fi
 sed -n "${line_start},${line_end}p" processed_with_tophat.tsv >>chunk_50/processed_with_tophat.tsv
 
 for i in {1..50}
@@ -213,7 +217,7 @@ rm selected_discordant_reads_1.fastq selected_discordant_reads_2.fastq
 
 
 # 5. generating fusion statistics
-echo "Step 5: Generating fusion statistics"
+echo -e "\nStep 5: Generating fusion statistics"
 # split file to 50 chunk to redunce memory and speed up processing
 lineCount=$( wc -l processed_with_blat.tsv | cut -f1 -d " " )
 chunk=$( echo "$lineCount/50" | bc )
@@ -224,16 +228,18 @@ for((i=1; i<50; i++))
     line_start=$[ ($i-1)*$chunk+1 ]
     line_end=$[ $i*chunk ]
     if [ $chunk -gt 0 ]; then
-        sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_${i}/processed_with_blat.tsv
+      sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_${i}/processed_with_blat.tsv
     fi
   done
 if [ $chunk -gt 0 ]; then
-    sed -i '1d' chunk_1/processed_with_blat.tsv
+  sed -i '1d' chunk_1/processed_with_blat.tsv
 fi
 line_start=$[ 49*$chunk+1 ]
 line_end=$lineCount
 mkdir chunk_50
-head -n 1 processed_with_blat.tsv >chunk_50/processed_with_blat.tsv
+if [ $chunk -gt 0 ]; then
+  head -n 1 processed_with_blat.tsv >chunk_50/processed_with_blat.tsv
+fi
 sed -n "${line_start},${line_end}p" processed_with_blat.tsv >>chunk_50/processed_with_blat.tsv
 
 for i in {1..50}
@@ -251,8 +257,8 @@ for((i=2; i<51; i++))
   done
 rm -rf chunk* temp_cluster.bed
 
-6. annotating and getting final fusions # this is for sherlock, use mark section in final version
-echo "Step 6: Generating final fusions"
+# 6. annotating and getting final fusions # this is for sherlock, use mark section in final version
+echo -e "\nStep 6: Generating final fusions"
 # split file to 50 chunk to redunce memory and speed up processing
 lineCount=$( wc -l fusion_statistics.tsv | cut -f1 -d " " )
 chunk=$( echo "$lineCount/50" | bc )
@@ -263,16 +269,18 @@ for((i=1; i<50; i++))
     line_start=$[ ($i-1)*$chunk+1 ]
     line_end=$[ $i*chunk ]
     if [ $chunk -gt 0 ]; then
-        sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_${i}/fusion_statistics.tsv
+      sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_${i}/fusion_statistics.tsv
     fi
   done
 if [ $chunk -gt 0 ]; then
-    sed -i '1d' chunk_1/fusion_statistics.tsv
+  sed -i '1d' chunk_1/fusion_statistics.tsv
 fi
 line_start=$[ 49*$chunk+1 ]
 line_end=$lineCount
 mkdir chunk_50
-head -n 1 fusion_statistics.tsv >chunk_50/fusion_statistics.tsv
+if [ $chunk -gt 0 ]; then
+  head -n 1 fusion_statistics.tsv >chunk_50/fusion_statistics.tsv
+fi
 sed -n "${line_start},${line_end}p" fusion_statistics.tsv >>chunk_50/fusion_statistics.tsv
 
 for i in {1..50}
@@ -289,11 +297,12 @@ for((i=2; i<51; i++))
   done
 rm -rf chunk*
 
-cd ..
-rm -rf ${output_directory}/temp_output_SFyNCS
+cd ${output_directory}
+rm -rf temp_output_SFyNCS
 cut -f1-29 fusions.tsv >fusions_abridged.tsv
 gzip fusions.tsv
 gzip fusions_abridged.tsv
+cd $current_directory
 echo "Finished!"
 
 <<mark
@@ -311,7 +320,7 @@ perl $toolDir/preliminary_fusion_statistics.pl fusion_statistics.tsv preliminary
 
 
 # 9. delete temp directory
-cd .. && gzip preliminary_at_least_3_total_reads_fusions_statistics.tsv && rm -rf ${output_directory}/temp_output_SFyNCS
+cd ${output_directory} && gzip preliminary_at_least_3_total_reads_fusions_statistics.tsv && rm -rf temp_output_SFyNCS && cd $current_directory
 echo "Finished!"
 mark
 

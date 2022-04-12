@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# 2022-03-15
+# 2022-04-12
 
 # 1. Function
 # Add blat supported statistics
@@ -19,14 +19,20 @@
 # column 5: right segment breakpoint
 # column 6: strand of the right segment
 # column 7: cluster id
-# column 8: split read count (processed by tophat)
-# column 9: read pair count (processed by tophat)
-# column 10: minimum distance of read pair to left breakpoint 
-# column 11: minimum distance of read pair to right breakpoint 
-# column 12: split reads (processed by tophat)
-# column 13: read pairs (processed by tophat)
-# column 14: distance of read pair to left breakpoint
-# column 15: distance of read pair to right breakpoint
+# column 8: split read count (star)
+# column 9: read pair count (star)
+# column 10: split read count (processed by tophat)
+# column 11: potential split read count (processed by tophat)
+# column 12: read pair count (processed by tophat)
+# column 13: minimum distance of read pair to left breakpoint 
+# column 14: minimum distance of read pair to right breakpoint 
+# column 15: split reads (star)
+# column 16: read pairs (star)
+# column 17: split reads (processed by tophat)
+# column 18: potential split reads (processed by tophat)
+# column 19: read pairs (processed by tophat)
+# column 20: distance of read pair to left breakpoint
+# column 21: distance of read pair to right breakpoint
 
 
 # 3. Output
@@ -37,17 +43,35 @@
 # column 5: right segment site
 # column 6: strand of the right segment
 # column 7: cluster id
-# column 8: split read count (processed by tophat and blat)
-# column 9: read pair count (processed by tophat)
-# column 10: minimum distance of read pair to left breakpoint 
-# column 11: minimum distance of read pair to right breakpoint 
-# column 12: identity
-# column 13: minimum blat distace of left breakpoint (use mean if both read 1 and read 2 are split read)
-# column 14: minimum blat distace of right breakpoint (use mean if both read 1 and read 2 are split read)
-# column 15: split reads (processed by tophat and blat)
-# column 16: read pairs (processed by tophat)
-# column 17: distace of split read to left breakpoint when blating to artifact reference (use mean if both read 1 and read 2 are split read)
-# column 18: distace of split read to right breakpoint when blating to artifact reference  (use mean if both read 1 and read 2 are split read)
+# column 8: split read count (star)
+# column 9: read pair count (star)
+# column 10: split read count (processed by tophat)
+# column 11: potential split read count (processed by tophat)
+# column 12: read pair count (processed by tophat)
+# column 13: split read count (blat tophat split reads and tophat potential split reads)
+# column 14: split read count (blat tophat split reads)
+# column 15: minimum distance of read pair to left breakpoint 
+# column 16: minimum distance of read pair to right breakpoint 
+# column 17: identity
+# column 18: minimum blat distace of left breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 19: minimum blat distace of right breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 20: minimum blat distace of left breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 21: minimum blat distace of right breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 22: is canonical split site
+# column 23: split reads (star)
+# column 24: read pairs (star)
+# column 25: split reads (processed by tophat)
+# column 26: potential split reads (processed by tophat)
+# column 27: read pairs (processed by tophat)
+# column 28: split reads (blat tophat split read and tophat potential split read)
+# column 29: distance of read pair to left breakpoint
+# column 30: distance of read pair to right breakpoint
+# column 31: distace of split read to left breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 32: distace of split read to right breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 33: distace of split read to left breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 34: distace of split read to right breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 35: alignment of left segment
+# column 36: alignment of right segment
 
 
 use strict;
@@ -57,6 +81,7 @@ use File::Basename;
 use lib dirname $0;
 
 my $slop_length=5;
+my $motif_searching_length=5;
 my $length_in_fusion=1000000; # 1Mb
 my $length_out_fusion=100;
 my $length_for_identity=10;
@@ -64,12 +89,13 @@ my $fasta;
 my $align_percentage=0.9; # blat alignment >=read_length*$align_percentage will be kept
 
 GetOptions(
-    's|slop_length=i'  		=> \$slop_length,
-    'f|fasta=s'     		=> \$fasta,
-    'a|align_percentage=f'     	=> \$align_percentage,
-    'i|length_in_fusion=i'     	=> \$length_in_fusion,
-    'o|length_out_fusion=i'     => \$length_out_fusion,
-    'h|help'    		=> sub{usage()}
+    's|slop_length=i'  			=> \$slop_length,
+    'm|motif_searching_length=i'	=>\$motif_searching_length,
+    'f|fasta=s'     			=> \$fasta,
+    'a|align_percentage=f'     		=> \$align_percentage,
+    'i|length_in_fusion=i'     		=> \$length_in_fusion,
+    'o|length_out_fusion=i'     	=> \$length_out_fusion,
+    'h|help'    			=> sub{usage()}
 )||usage();
 
 die "Please set -f or --fasta" if ! defined $fasta;
@@ -77,11 +103,14 @@ my $left_pos_in_artifact_seq=$length_in_fusion;
 my $right_pos_in_artifact_seq=$length_in_fusion+2*$length_out_fusion+1;
 
 say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right", "Strand_right", "Cluster_id",
-    "Split_read_count_(tophat_and_blat)", "Read_pair_count_(tophat)", 
-    "Minimum_read_distance_to_left", "Minimum_read_distance_to_right",
-    "Identity", "Minimum_blat_distance_to_left", "Minimum_blat_distance_to_right",
-    "Split_reads_(tophat_and_blat)", "Read_pairs_(tophat)",
-    "Blat_distance_to_left", "Blat_distance_to_right");
+    "Split_read_count_(star)", "Read_pair_count_(star)", "Split_read_count_(tophat)", "Potential_split_read_count_(tophat)", "Read_pair_count_(tophat)", "Split_read_count_(blat_tophat_split_and_tophat_potential_split_reads)", "Split_read_count_(blat_tophat_split_reads)",
+    "Minimum_read_pair_distance_to_left", "Minimum_read_pair_distance_to_right",
+    "Identity", "Minimum_blat_distance_to_left_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_right_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_left_(tophat_split_reads)", "Minimum_blat_distance_to_right_(tophat_split_reads)",
+    "Is_canonical_motif",
+    "Split_reads_(star)", "Read_pairs_(star)", "Split_reads_(tophat)", "Potential_split_reads_(tophat)", "Read_pairs_(tophat)", "Split_reads_(blat_tophat_split_and_tophat_potential_split_reads)",
+    "Read_pair_distance_to_left", "Read_pair_distance_to_right",
+    "Blat_distance_to_left_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_right_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_left_(tophat_split_reads)", "Blat_distance_to_right_(tophat_split_eads)",
+    "Identity_align_left", "Identity_align_right");
 
 
 open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
@@ -90,14 +119,15 @@ open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
 while(<IN>){
     chomp;
     my ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $cluster_id,
-        $split_read_count_tophat, $read_pair_count_tophat,
-	$min_read_pair_distance_left, $min_read_pair_distance_right,
-	$split_reads_tophat, $read_pairs_tophat,
-	$read_distance_to_left, $read_distance_to_right)=split "\t", $_;
+        $split_read_count_star, $read_pair_count_star, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat,
+        $min_read_pair_distance_left, $min_read_pair_distance_right,
+        $split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat,
+        $read_pair_distance_to_left, $read_pair_distance_to_right)=split "\t", $_;
     my $split_reads_blat="NA";
     my $split_read_count_blat=0;
     
     my @Split_reads_tophat=split ",", $split_reads_tophat;
+    my @Split_reads_poential_tophat=split ",", $potential_split_reads_tophat;
     
     my $artifact_seq_left=&getFlankingSequence($chr_left, $pos_left, $strand_left, $length_in_fusion, $length_out_fusion, "left");
     my $artifact_seq_right=&getFlankingSequence($chr_right, $pos_right, $strand_right, $length_in_fusion, $length_out_fusion, "right");
@@ -112,7 +142,7 @@ while(<IN>){
     close(ARTIFACT);
     
     my ($blat_distance_left_output, $blat_distance_right_output)=("NA") x 2;
-    foreach my $read (@Split_reads_tophat){
+    foreach my $read (@Split_reads_tophat, @Split_reads_poential_tophat){
         next if $read eq "NA";
         system("echo $read >temp_reads.tsv");
         system('grep -A 1 -f temp_reads.tsv selected_discordant_reads_1.fastq | grep -v "^--$" | sed "/^@/ s#^@#>#;/^>/ s#\$#_1#" >temp_reads.fa');
@@ -124,10 +154,49 @@ while(<IN>){
         my $temp_processed_Alignment=&processAlignment(\@BLAT);
         my @Processed_Alignment=@{$temp_processed_Alignment};
 	
-	if(@Processed_Alignment==2){ 
-	    my ($name_1, $start_1, $end_1)=($Processed_Alignment[0][7], $Processed_Alignment[0][3], $Processed_Alignment[0][4]);  # $qSize, $qStart, $qEnd, $tStart, $tEnd, $pslScore, $percentIdentity, $qName, $blockSize, $tStarts in Array
-	    my ($name_2, $start_2, $end_2)=($Processed_Alignment[1][7], $Processed_Alignment[1][3], $Processed_Alignment[1][4]); 
-	    next if $name_1 eq $name_2;
+	if(@Processed_Alignment==2 || @Processed_Alignment==3){ # one mate may align to two segments, so it would be 2 or 3
+	    my ($name_1, $start_1, $end_1, $name_2, $start_2, $end_2);
+	    my ($blockSizes_1, $tStarts_1, $blockSizes_2, $tStarts_2);
+	    
+	    if(@Processed_Alignment==2){
+		($name_1, $start_1, $end_1)=($Processed_Alignment[0][7], $Processed_Alignment[0][3], $Processed_Alignment[0][4]);  # $qSize, $qStart, $qEnd, $tStart, $tEnd, $pslScore, $percentIdentity, $qName, $blockSize, $tStarts in Array
+		($name_2, $start_2, $end_2)=($Processed_Alignment[1][7], $Processed_Alignment[1][3], $Processed_Alignment[1][4]);
+		($blockSizes_1, $tStarts_1, $blockSizes_2, $tStarts_2)=($Processed_Alignment[0][8], $Processed_Alignment[0][9], $Processed_Alignment[1][8], $Processed_Alignment[1][9]);
+		next if $name_1 eq $name_2; # only have one reads
+	    }else{ # one mate align to different region
+		my ($temp_name_1, $temp_start_1, $temp_end_1, $temp_blockSizes_1, $temp_tStarts_1)=($Processed_Alignment[0][7], $Processed_Alignment[0][3], $Processed_Alignment[0][4], $Processed_Alignment[0][8], $Processed_Alignment[0][9]);
+		my ($temp_name_2, $temp_start_2, $temp_end_2, $temp_blockSizes_2, $temp_tStarts_2)=($Processed_Alignment[1][7], $Processed_Alignment[1][3], $Processed_Alignment[1][4], $Processed_Alignment[1][8], $Processed_Alignment[1][9]);
+		my ($temp_name_3, $temp_start_3, $temp_end_3, $temp_blockSizes_3, $temp_tStarts_3)=($Processed_Alignment[2][7], $Processed_Alignment[2][3], $Processed_Alignment[2][4], $Processed_Alignment[2][8], $Processed_Alignment[2][9]);
+		next if $temp_name_1 eq $temp_name_2 && $temp_name_1 eq $temp_name_3; # only have one reads
+		my ($temp_multiple_start_1, $temp_multiple_end_1, $temp_multiple_start_2, $temp_multiple_end_2, $temp_multiple_name);
+		my ($temp_multiple_blockSizes_1, $temp_multiple_tStarts_1, $temp_multiple_blockSizes_2, $temp_multiple_tStarts_2);
+		if($temp_name_1 eq $temp_name_2){
+		    ($name_2, $start_2, $end_2)=($temp_name_3, $temp_start_3, $temp_end_3);
+		    $temp_multiple_name=$temp_name_1;
+		    ($temp_multiple_start_1, $temp_multiple_end_1, $temp_multiple_start_2, $temp_multiple_end_2)=($temp_start_1, $temp_end_1, $temp_start_2, $temp_end_2);
+		    ($blockSizes_2, $tStarts_2)=($temp_blockSizes_3, $temp_tStarts_3);
+		    ($temp_multiple_blockSizes_1, $temp_multiple_tStarts_1, $temp_multiple_blockSizes_2, $temp_multiple_tStarts_2)=($temp_blockSizes_1, $temp_tStarts_1, $temp_blockSizes_2, $temp_tStarts_2);
+		}elsif($temp_name_1 eq $temp_name_3){
+		    ($name_2, $start_2, $end_2)=($temp_name_2, $temp_start_2, $temp_end_2);
+		    $temp_multiple_name=$temp_name_1;
+		    ($temp_multiple_start_1, $temp_multiple_end_1, $temp_multiple_start_2, $temp_multiple_end_2)=($temp_start_1, $temp_end_1, $temp_start_3, $temp_end_3);
+		    ($blockSizes_2, $tStarts_2)=($temp_blockSizes_2, $temp_tStarts_2);
+		    ($temp_multiple_blockSizes_1, $temp_multiple_tStarts_1, $temp_multiple_blockSizes_2, $temp_multiple_tStarts_2)=($temp_blockSizes_1, $temp_tStarts_1, $temp_blockSizes_3, $temp_tStarts_3);
+		}else{ # $temp_name_2 eq $temp_name_3
+		    ($name_2, $start_2, $end_2)=($temp_name_1, $temp_start_1, $temp_end_1);
+		    $temp_multiple_name=$temp_name_2;
+		    ($temp_multiple_start_1, $temp_multiple_end_1, $temp_multiple_start_2, $temp_multiple_end_2)=($temp_start_2, $temp_end_2, $temp_start_3, $temp_end_3);
+		    ($blockSizes_2, $tStarts_2)=($temp_blockSizes_1, $temp_tStarts_1);
+		    ($temp_multiple_blockSizes_1, $temp_multiple_tStarts_1, $temp_multiple_blockSizes_2, $temp_multiple_tStarts_2)=($temp_blockSizes_2, $temp_tStarts_2, $temp_blockSizes_3, $temp_tStarts_3);
+		}
+		
+		my $is_multiple_aligned_read_support_fusion=0;
+		$is_multiple_aligned_read_support_fusion=1 if ($temp_multiple_end_1<=$left_pos_in_artifact_seq && $temp_start_2>=$right_pos_in_artifact_seq) || ($temp_multiple_end_2<=$left_pos_in_artifact_seq && $temp_start_1>=$right_pos_in_artifact_seq);
+		next if $is_multiple_aligned_read_support_fusion==0;
+		($name_1, $start_1, $end_1)=($temp_multiple_name, $temp_multiple_start_1, $temp_multiple_end_1); # randomly select one alignment
+		($blockSizes_1, $tStarts_1)=($temp_multiple_start_1, $temp_multiple_end_1);
+	    }
+	    
 	    my ($is_support_split_1, $is_support_split_2)=(0) x 2;
 	    $is_support_split_1=1 if $left_pos_in_artifact_seq>$start_1 && $right_pos_in_artifact_seq<$end_1;
 	    $is_support_split_2=1 if $left_pos_in_artifact_seq>$start_2 && $right_pos_in_artifact_seq<$end_2;
@@ -137,7 +206,6 @@ while(<IN>){
 	    }
 	    
 	    # get distance to fusion breakpoint
-	    my ($blockSizes_1, $tStarts_1, $blockSizes_2, $tStarts_2)=($Processed_Alignment[0][8], $Processed_Alignment[0][9], $Processed_Alignment[1][8], $Processed_Alignment[1][9]);
 	    my ($blat_distance_left_1, $blat_distance_right_1)=&getDistanceInBlat($blockSizes_1, $tStarts_1);
 	    my ($blat_distance_left_2, $blat_distance_right_2)=&getDistanceInBlat($blockSizes_2, $tStarts_2);
 	    
@@ -151,8 +219,8 @@ while(<IN>){
 		($temp_blat_distance_left, $temp_blat_distance_right)=($blat_distance_left_2, $blat_distance_right_2);
 	    }
 	    
-	    $blat_distance_left_output.=",".$temp_blat_distance_left;
-	    $blat_distance_right_output.=",".$temp_blat_distance_right;
+	    $blat_distance_left_output.=",".$temp_blat_distance_left if $is_support_split_1==1 || $is_support_split_2==1;
+	    $blat_distance_right_output.=",".$temp_blat_distance_right if $is_support_split_1==1 || $is_support_split_2==1;
 	}
     }
     
@@ -161,6 +229,25 @@ while(<IN>){
     my $identity_seq_right=&getFlankingSequence($chr_right, $pos_right, $strand_right, $length_for_identity, $length_for_identity, "right");
     my ($identity_output, $identity_align_left_output, $identity_align_right_output)=&getIdentity($identity_seq_left, $identity_seq_right);
 
+    # is contain canonical split motif
+    my $flanking_search_sequence_left=$identity_seq_left;
+    $flanking_search_sequence_left=substr($flanking_search_sequence_left, $length_for_identity-$motif_searching_length, 2*$motif_searching_length);
+    my $is_left_contain_donor_motif=($flanking_search_sequence_left=~/GT/) ? "Y" : "N";
+    $flanking_search_sequence_left=~tr/[ACTG]/[TGAC]/;
+    $flanking_search_sequence_left=reverse($flanking_search_sequence_left);
+    my $is_left_contain_acceptor_motif=($flanking_search_sequence_left=~/[CTA]AG/) ? "Y" : "N";
+    
+    my $flanking_search_sequence_right=$identity_seq_right;
+    $flanking_search_sequence_right=substr($flanking_search_sequence_right, $length_for_identity-$motif_searching_length, 2*$motif_searching_length);
+    my $is_right_contain_acceptor_motif=($flanking_search_sequence_right=~/[CTA]AG/) ? "Y" : "N";
+    $flanking_search_sequence_right=~tr/[ACTG]/[TGAC]/;
+    $flanking_search_sequence_right=reverse($flanking_search_sequence_right);
+    my $is_right_contain_donor_motif=($flanking_search_sequence_right=~/GT/) ? "Y" : "N";
+    
+    my $is_split_site_contain_canonical_motif="N";
+    $is_split_site_contain_canonical_motif="Y" if ($is_left_contain_donor_motif eq "Y" && $is_right_contain_acceptor_motif eq "Y") ||
+	($is_right_contain_donor_motif eq "Y" && $is_left_contain_acceptor_motif eq "Y");
+    
     
     $split_reads_blat=~s/NA,//;
     $blat_distance_left_output=~s/NA,//;
@@ -178,15 +265,45 @@ while(<IN>){
         }
     }
     
+    # statistics base on tophat split reads
+    my %Temp_tophat_split_reads;
+    foreach my $read (split ",", $split_reads_tophat){
+	next if $read eq "NA";
+	$Temp_tophat_split_reads{$read}=0;
+    }
+    my $split_read_count_blat_base_on_tophat_split_read=0;
+    my ($minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right, $sum_minimum_blat_base_on_tophat_split_read_distance)=("NA") x 3;
+    my ($blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right)=("NA") x 2;
+    my @Split_reads_blat=split ",", $split_reads_blat;
+    for(my $i=0; $i<@Blat_distance_left; $i++){
+        next if $Blat_distance_left[$i] eq "NA" || $Blat_distance_right[$i] eq "NA";
+	my $read=$Split_reads_blat[$i];
+	next if $read eq "NA" || !exists $Temp_tophat_split_reads{$read};
+	$split_read_count_blat_base_on_tophat_split_read++;
+	$blat_distance_base_on_tophat_split_read_left.=",".$Blat_distance_left[$i];
+	$blat_distance_base_on_tophat_split_read_right.=",".$Blat_distance_right[$i];
+        my $temp_sum_blat_distance=abs($Blat_distance_left[$i]+$Blat_distance_right[$i]);
+        if($sum_minimum_blat_base_on_tophat_split_read_distance eq "NA" || $sum_minimum_blat_base_on_tophat_split_read_distance>$temp_sum_blat_distance){
+            ($minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right)=(abs($Blat_distance_left[$i]), abs($Blat_distance_right[$i]));
+            $sum_minimum_blat_base_on_tophat_split_read_distance=$temp_sum_blat_distance;
+        }
+    }
+    $blat_distance_base_on_tophat_split_read_left=~s/NA,//;
+    $blat_distance_base_on_tophat_split_read_right=~s/NA,//;
+    
+    
     say join "\t", ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $cluster_id,
-		    $split_read_count_blat, $read_pair_count_tophat, 
-		    $min_read_pair_distance_left, $min_read_pair_distance_right,
-		    $identity_output, $minimum_blat_distance_left, $minimum_blat_distance_right,
-		    $split_reads_blat, $read_pairs_tophat,
-		    $blat_distance_left_output, $blat_distance_right_output);
+        $split_read_count_star, $read_pair_count_star, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat, $split_read_count_blat, $split_read_count_blat_base_on_tophat_split_read,
+        $min_read_pair_distance_left, $min_read_pair_distance_right, $identity_output,
+	$minimum_blat_distance_left, $minimum_blat_distance_right, $minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+        $is_split_site_contain_canonical_motif,
+	$split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat, $split_reads_blat,
+        $read_pair_distance_to_left, $read_pair_distance_to_right, 
+	$blat_distance_left_output, $blat_distance_right_output, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
+	$identity_align_left_output, $identity_align_right_output);
 }
 close(IN);
-system('rm temp_artifact.fa temp_reads.tsv temp_reads.fa');
+system('rm -f temp_artifact.fa temp_reads.tsv temp_reads.fa');
 
 sub pslCalcMilliBad{
     my ($sizeMul, $qEnd, $qStart, $tEnd, $tStart, $qNumInsert, $tNumInsert, $matches, $repMatches, $misMatches, $isMrna) = @_;
@@ -510,7 +627,8 @@ This script was used to get blat supported statistics
 Usage: perl $scriptName input >output
 Options:
 
-    -s --slop_length		Slop Length, read align within this slop_length of breakpoint will support the breakpoint [default: $slop_length]
+    -s --slop_length		Slop length, read align within this slop_length of breakpoint will support the breakpoint [default: $slop_length]
+    -m --motif_searching_length	Searching motif in upstream and downstream sequence of breakpoint [default: $motif_searching_length]
     -f --fasta    		reference fasta file (must be given)
     -a --align_percentage   	at least align_percentage of read should be aligned by blat [default: $align_percentage]
     -i --length_in_fusion   	take this value bp flanking breakpoint in fusion region to contructe artifact reference [default: $length_in_fusion]

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# 2022-03-15
+# 2022-04-09
 
 # 1. Function
 # Add tophat supported statistics
@@ -34,14 +34,20 @@
 # column 5: right segment breakpoint
 # column 6: strand of the right segment
 # column 7: cluster id
-# column 8: split read count (processed by tophat)
-# column 9: read pair count (processed by tophat)
-# column 10: minimum distance of read pair to left breakpoint 
-# column 11: minimum distance of read pair to right breakpoint 
-# column 12: split reads (processed by tophat)
-# column 13: read pairs (processed by tophat)
-# column 14: distance of read pair to left breakpoint
-# column 15: distance of read pair to right breakpoint
+# column 8: split read count (star)
+# column 9: read pair count (star)
+# column 10: split read count (processed by tophat)
+# column 11: potential split read count (processed by tophat)
+# column 12: read pair count (processed by tophat)
+# column 13: minimum distance of read pair to left breakpoint 
+# column 14: minimum distance of read pair to right breakpoint 
+# column 15: split reads (star)
+# column 16: read pairs (star)
+# column 17: split reads (processed by tophat)
+# column 18: potential split reads (processed by tophat)
+# column 19: read pairs (processed by tophat)
+# column 20: distance of read pair to left breakpoint
+# column 21: distance of read pair to right breakpoint
 
 
 use strict;
@@ -74,9 +80,9 @@ while(<IN>){
 close(IN);
 
 say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right", "Strand_right", "Cluster_id",
-    "Split_read_count_(tophat)", "Read_pair_count_(tophat)",
-    "Minimum_read_distance_to_left", "Minimum_read_distance_to_right",
-    "Split_reads_(tophat)", "Read_pairs_(tophat)",
+    "Split_read_count_(star)", "Read_pair_count_(star)", "Split_read_count_(tophat)", "Potential_split_read_count_(tophat)", "Read_pair_count_(tophat)",
+    "Minimum_read_pair_distance_to_left", "Minimum_read_pair_distance_to_right",
+    "Split_reads_(star)", "Read_pairs_(star)", "Split_reads_(tophat)", "Potential_split_reads_(tophat)", "Read_pairs_(tophat)",
     "Read_pair_distance_to_left", "Read_pair_distance_to_right");
 open IN, $ARGV[1] or die "Can't open $ARGV[1]:$!";
 # input have header
@@ -86,138 +92,354 @@ while(<IN>){
     my ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $junc_type, $cluster_id, $split_read_count, $read_pair_count, $split_reads, $read_pairs)=split "\t",$_;
     my ($split_reads_tophat, $read_pairs_tophat)=("NA") x 3;
     my ($split_read_count_tophat, $read_pair_count_tophat)=(0) x 3;
-    my ($read_distance_to_left, $read_distance_to_right, $min_distance_left, $min_distance_right)=("NA") x 4;
+    my ($potential_split_read_count_tophat, $potential_split_reads_tophat)=(0, "NA"); # delete this if potential read is not needed
+    my ($read_distance_to_left, $read_distance_to_right, $min_read_pair_distance_left, $min_read_pair_distance_right)=("NA") x 4;
     
     my @Split_reads=split ",", $split_reads;
     my @Read_pairs=split ",", $read_pairs;
+
+    if(0>1){ # this backup code didn't include potential_split_reads_tophat
+        foreach my $read (@Split_reads){
+            next if $read eq "NA";
+            my (@tophat_read_1, @tophat_read_2);
+            @tophat_read_1=@{$hash{$read}{"first"}} if exists $hash{$read}{"first"};
+            @tophat_read_2=@{$hash{$read}{"second"}} if exists $hash{$read}{"second"};
+            
+            
+            next if @tophat_read_1==0 || @tophat_read_2==0 || @tophat_read_1>2 || @tophat_read_2>2; # filter if one mate fail to align or align to more than two loci 
+            next if @tophat_read_1==1 && @tophat_read_2==1; # read not report as split read by tophat
+            
+            my ($chr_a, $start_a, $end_a, $chr_b, $start_b, $end_b); # a: left segment; b: right segment;
+            if(@tophat_read_1==2 && @tophat_read_2==2){ # both read 1 and read 2 are split reads 
+                $tophat_read_1[0]=~/(.*),(.*),(.*)/;
+                my ($chr_1_a, $start_1_a, $end_1_a)=($1, $2, $3);
+                $tophat_read_1[1]=~/(.*),(.*),(.*)/;
+                my ($chr_1_b, $start_1_b, $end_1_b)=($1, $2, $3);
+                $tophat_read_2[0]=~/(.*),(.*),(.*)/;
+                my ($chr_2_a, $start_2_a, $end_2_a)=($1, $2, $3);
+                $tophat_read_2[1]=~/(.*),(.*),(.*)/;
+                my ($chr_2_b, $start_2_b, $end_2_b)=($1, $2, $3);
+                my ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right, $chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right);
+                if($chr_left eq $chr_right){
+                    next if $chr_1_a ne $chr_1_b || $chr_2_a ne $chr_2_b || $chr_1_a ne $chr_2_a || $chr_1_a ne $chr_left;
+                    
+                    if($end_1_a<$end_1_b){
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_a, $start_1_a, $end_1_a, $chr_1_b, $start_1_b, $end_1_b);
+                    }else{
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_b, $start_1_b, $end_1_b, $chr_1_a, $start_1_a, $end_1_a);
+                    }
+                    
+                    if($end_2_a<$end_2_b){
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_a, $start_2_a, $end_2_a, $chr_2_b, $start_2_b, $end_2_b);
+                    }else{
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_b, $start_2_b, $end_2_b, $chr_2_a, $start_2_a, $end_2_a);
+                    }
+                }else{
+                    if($chr_1_a eq $chr_left){
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_a, $start_1_a, $end_1_a, $chr_1_b, $start_1_b, $end_1_b);
+                    }else{
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_b, $start_1_b, $end_1_b, $chr_1_a, $start_1_a, $end_1_a);
+                    }
+                    next if $chr_1_left ne $chr_left || $chr_1_right ne $chr_right;
+                    
+                    if($chr_2_a eq $chr_left){
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_a, $start_2_a, $end_2_a, $chr_2_b, $start_2_b, $end_2_b);
+                    }else{
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_b, $start_2_b, $end_2_b, $chr_2_a, $start_2_a, $end_2_a);
+                    }
+                    next if $chr_2_left ne $chr_left || $chr_2_right ne $chr_right;
+                }
+                ($chr_a, $chr_b)=($chr_left, $chr_right);
+                $start_a=($start_1_left<$start_2_left) ? $start_1_left : $start_2_left;
+                $end_a=($end_1_left<$end_2_left) ? $end_2_left : $end_1_left;
+                next if $end_a-$start_a>$length_threshold_if_both_mate_are_split_reads; # $length_threshold_if_both_mate_are_split_reads is artifact number (200), if both reads are split reads, one segment should not longer than read length
+                $start_b=($start_1_right<$start_2_right) ? $start_1_right : $start_2_right;
+                $end_b=($end_1_right<$end_2_right) ? $end_2_right : $end_1_right;
+                next if $end_b-$start_b>$length_threshold_if_both_mate_are_split_reads; # $length_threshold_if_both_mate_are_split_reads is artifact number (200), if both reads are split reads, one segment should not longer than read length
+            }else{ # (@tophat_read_1==1 && @tophat_read_2==2) || (@tophat_read_1==2 && @tophat_read_2==1)
+                my ($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2, $chr_mate, $start_mate, $end_mate);
+                my ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right);
+                if(@tophat_read_1==1){
+                    $tophat_read_2[0]=~/(.*),(.*),(.*)/;
+                    ($chr_split_1, $start_split_1, $end_split_1)=($1, $2, $3);
+                    $tophat_read_2[1]=~/(.*),(.*),(.*)/;
+                    ($chr_split_2, $start_split_2, $end_split_2)=($1, $2, $3);
+                    $tophat_read_1[0]=~/(.*),(.*),(.*)/;
+                    ($chr_mate, $start_mate, $end_mate)=($1, $2, $3);
+                }else{
+                    $tophat_read_1[0]=~/(.*),(.*),(.*)/;
+                    ($chr_split_1, $start_split_1, $end_split_1)=($1, $2, $3);
+                    $tophat_read_1[1]=~/(.*),(.*),(.*)/;
+                    ($chr_split_2, $start_split_2, $end_split_2)=($1, $2, $3);
+                    $tophat_read_2[0]=~/(.*),(.*),(.*)/;
+                    ($chr_mate, $start_mate, $end_mate)=($1, $2, $3);
+                }
+                
+                if($chr_left eq $chr_right){
+                    next if $chr_split_1 ne $chr_split_2 || $chr_split_1 ne $chr_mate || $chr_split_1 ne $chr_left;
+                    if($start_split_1<$start_split_2){
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2);
+                    }else{
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_2, $start_split_2, $end_split_2, $chr_split_1, $start_split_1, $end_split_1);
+                    }
+                        
+                    my $distance_mate_to_split_left=abs($start_mate-$start_split_left);
+                    my $distance_mate_to_split_right=abs($start_mate-$start_split_right);
+                    ($chr_a, $chr_b)=($chr_left, $chr_right);
+                    if($distance_mate_to_split_left<$distance_mate_to_split_right){
+                        $start_a=($start_split_left<$start_mate) ? $start_split_left : $start_mate;
+                        $end_a=($end_split_left<$end_mate) ? $end_mate : $end_split_left;
+                        ($start_b, $end_b)=($start_split_right, $end_split_right);
+                    }else{
+                        ($start_a, $end_a)=($start_split_left, $end_split_left);
+                        $start_b=($start_split_right<$start_mate) ? $start_split_right : $start_mate;
+                        $end_b=($end_split_right<$end_mate) ? $end_mate : $end_split_right;
+                    }
+                }else{
+                    next if $chr_left ne $chr_mate && $chr_right ne $chr_mate;
+                    
+                    if($chr_split_1 eq $chr_left){
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2);
+                    }else{
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_2, $start_split_2, $end_split_2, $chr_split_1, $start_split_1, $end_split_1);
+                    }
+                    next if $chr_split_left ne $chr_left || $chr_split_right ne $chr_right;
+                    
+                    ($chr_a, $chr_b)=($chr_left, $chr_right);
+                    if($chr_left eq $chr_mate){
+                        $start_a=($start_split_left<$start_mate) ? $start_split_left : $start_mate;
+                        $end_a=($end_split_left<$end_mate) ? $end_mate : $end_split_left;
+                        ($start_b, $end_b)=($start_split_right, $end_split_right);
+                    }else{
+                        ($start_a, $end_a)=($start_split_left, $end_split_left);
+                        $start_b=($start_split_right<$start_mate) ? $start_split_right : $start_mate;
+                        $end_b=($end_split_right<$end_mate) ? $end_mate : $end_split_right;
+                    }
+                }
+                
+            }
+            
+            # compare read to breakpoints
+            my ($is_left_support_breakpoint, $is_right_support_breakpoint)=(0) x 2;
+            $is_left_support_breakpoint=&compareSplitReadToBreakpoint($pos_left, $strand_left, $start_a, $end_a);
+            $is_right_support_breakpoint=&compareSplitReadToBreakpoint($pos_right, $strand_right, $start_b, $end_b);
+            
+            if($is_left_support_breakpoint==1 && $is_right_support_breakpoint==1){
+                $split_read_count_tophat++;
+                $split_reads_tophat.=",".$read;
+            }
+        }
+    }
     
     foreach my $read (@Split_reads){
         next if $read eq "NA";
+        #my @tophat_read_1=sort keys %{$hash{$read}{"first"}} if exists $hash{$read}{"first"};
+        #my @tophat_read_2=sort keys %{$hash{$read}{"second"}} if exists $hash{$read}{"second"};
         my (@tophat_read_1, @tophat_read_2);
         @tophat_read_1=@{$hash{$read}{"first"}} if exists $hash{$read}{"first"};
         @tophat_read_2=@{$hash{$read}{"second"}} if exists $hash{$read}{"second"};
         
-        next if @tophat_read_1==0 || @tophat_read_2==0 || @tophat_read_1>2 || @tophat_read_2>2; # filter if one mate fail to align or align to more than two loci 
-        next if @tophat_read_1==1 && @tophat_read_2==1; # read not report as split read by tophat
-        
-        my ($chr_a, $start_a, $end_a, $chr_b, $start_b, $end_b); # a: left segment; b: right segment;
-        if(@tophat_read_1==2 && @tophat_read_2==2){ # both read 1 and read 2 are split reads 
+        # filter if one mate fail to align or align to more than two loci 
+        next if @tophat_read_1>2 || @tophat_read_2>2;
+        if(@tophat_read_1==0 || @tophat_read_2==0){ # may the problem of tophat
+            my @tophat_align=(@tophat_read_1==0) ? @tophat_read_2 : @tophat_read_1;
+            if(@tophat_align==1){ # may split read
+                $tophat_align[0]=~/(.*),(.*),(.*)/;
+                my ($chr_read, $start_read, $end_read)=($1, $2, $3);
+                # compare read to breakpoints
+                my ($is_left_support_breakpoint, $is_right_support_breakpoint)=(0) x 2;
+                $is_left_support_breakpoint=&compareSplitReadToBreakpoint($pos_left, $strand_left, $start_read, $end_read);
+                $is_right_support_breakpoint=&compareSplitReadToBreakpoint($pos_right, $strand_right, $start_read, $end_read);
+                
+                if($is_left_support_breakpoint==1 || $is_right_support_breakpoint==1){
+                    $potential_split_read_count_tophat++;
+                    $potential_split_reads_tophat.=",".$read;
+                }
+            }else{ # split read
+                my ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read);
+                $tophat_align[0]=~/(.*),(.*),(.*)/;
+                my ($chr_1, $start_1, $end_1)=($1, $2, $3);
+                $tophat_align[1]=~/(.*),(.*),(.*)/;
+                my ($chr_2, $start_2, $end_2)=($1, $2, $3);
+                
+                if($chr_left eq $chr_right){
+                    next if $chr_1 ne $chr_2 || $chr_1 ne $chr_left;
+                    ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=($chr_1, $start_1, $end_1, $chr_2, $start_2, $end_2);
+                    ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=
+                        ($chr_2, $start_2, $end_2, $chr_1, $start_1, $end_1) if $end_2 < $end_1 || ($end_2==$end_1 && $start_2<$start_1);
+                }else{
+                    if($chr_left_read eq $chr_left){
+                        ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=($chr_1, $start_1, $end_1, $chr_2, $start_2, $end_2);
+                    }else{
+                        ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=($chr_2, $start_2, $end_2, $chr_1, $start_1, $end_1)
+                    }
+                    next if $chr_left_read ne $chr_left || $chr_right_read ne $chr_right;
+                }
+                
+                # compare read to breakpoints
+                my ($is_left_support_breakpoint, $is_right_support_breakpoint)=(0) x 2;
+                $is_left_support_breakpoint=&compareSplitReadToBreakpoint($pos_left, $strand_left, $start_left_read, $end_left_read);
+                $is_right_support_breakpoint=&compareSplitReadToBreakpoint($pos_right, $strand_right, $start_right_read, $end_right_read);
+                
+                if($is_left_support_breakpoint==1 && $is_right_support_breakpoint==1){ # use && as it is split read, in contrast, in @tophat_read_1==1 && @tophat_read_2==1 below, use || since the read may come from left segment or right segment
+                    $potential_split_read_count_tophat++;
+                    $potential_split_reads_tophat.=",".$read;
+                }
+            }
+        }elsif(@tophat_read_1==1 && @tophat_read_2==1){ # read not report as split read by tophat, may the problem of tophat
+            my ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read);
             $tophat_read_1[0]=~/(.*),(.*),(.*)/;
-            my ($chr_1_a, $start_1_a, $end_1_a)=($1, $2, $3);
-            $tophat_read_1[1]=~/(.*),(.*),(.*)/;
-            my ($chr_1_b, $start_1_b, $end_1_b)=($1, $2, $3);
+            my ($chr_1, $start_1, $end_1)=($1, $2, $3);
             $tophat_read_2[0]=~/(.*),(.*),(.*)/;
-            my ($chr_2_a, $start_2_a, $end_2_a)=($1, $2, $3);
-            $tophat_read_2[1]=~/(.*),(.*),(.*)/;
-            my ($chr_2_b, $start_2_b, $end_2_b)=($1, $2, $3);
-            my ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right, $chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right);
+            my ($chr_2, $start_2, $end_2)=($1, $2, $3);
+            
             if($chr_left eq $chr_right){
-                next if $chr_1_a ne $chr_1_b || $chr_2_a ne $chr_2_b || $chr_1_a ne $chr_2_a || $chr_1_a ne $chr_left;
-                
-                if($end_1_a<$end_1_b){
-                    ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_a, $start_1_a, $end_1_a, $chr_1_b, $start_1_b, $end_1_b);
-                }else{
-                    ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_b, $start_1_b, $end_1_b, $chr_1_a, $start_1_a, $end_1_a);
-                }
-                
-                if($end_2_a<$end_2_b){
-                    ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_a, $start_2_a, $end_2_a, $chr_2_b, $start_2_b, $end_2_b);
-                }else{
-                    ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_b, $start_2_b, $end_2_b, $chr_2_a, $start_2_a, $end_2_a);
-                }
+                next if $chr_1 ne $chr_2 || $chr_1 ne $chr_left;
+                ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=($chr_1, $start_1, $end_1, $chr_2, $start_2, $end_2);
+                ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=
+                    ($chr_2, $start_2, $end_2, $chr_1, $start_1, $end_1) if $end_2 < $end_1 || ($end_2==$end_1 && $start_2<$start_1);
             }else{
-                if($chr_1_a eq $chr_left){
-                    ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_a, $start_1_a, $end_1_a, $chr_1_b, $start_1_b, $end_1_b);
+                if($chr_left_read eq $chr_left){
+                    ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=($chr_1, $start_1, $end_1, $chr_2, $start_2, $end_2);
                 }else{
-                    ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_b, $start_1_b, $end_1_b, $chr_1_a, $start_1_a, $end_1_a);
+                    ($chr_left_read, $start_left_read, $end_left_read, $chr_right_read, $start_right_read, $end_right_read)=($chr_2, $start_2, $end_2, $chr_1, $start_1, $end_1)
                 }
-                next if $chr_1_left ne $chr_left || $chr_1_right ne $chr_right;
-                
-                if($chr_2_a eq $chr_left){
-                    ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_a, $start_2_a, $end_2_a, $chr_2_b, $start_2_b, $end_2_b);
-                }else{
-                    ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_b, $start_2_b, $end_2_b, $chr_2_a, $start_2_a, $end_2_a);
-                }
-                next if $chr_2_left ne $chr_left || $chr_2_right ne $chr_right;
+                next if $chr_left_read ne $chr_left || $chr_right_read ne $chr_right;
             }
-            ($chr_a, $chr_b)=($chr_left, $chr_right);
-            $start_a=($start_1_left<$start_2_left) ? $start_1_left : $start_2_left;
-            $end_a=($end_1_left<$end_2_left) ? $end_2_left : $end_1_left;
-            next if $end_a-$start_a>$length_threshold_if_both_mate_are_split_reads; # $length_threshold_if_both_mate_are_split_reads is artifact number (200), if both reads are split reads, one segment should not longer than read length
-            $start_b=($start_1_right<$start_2_right) ? $start_1_right : $start_2_right;
-            $end_b=($end_1_right<$end_2_right) ? $end_2_right : $end_1_right;
-            next if $end_b-$start_b>$length_threshold_if_both_mate_are_split_reads; # $length_threshold_if_both_mate_are_split_reads is artifact number (200), if both reads are split reads, one segment should not longer than read length
-        }else{ # (@tophat_read_1==1 && @tophat_read_2==2) || (@tophat_read_1==2 && @tophat_read_2==1)
-            my ($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2, $chr_mate, $start_mate, $end_mate);
-            my ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right);
-            if(@tophat_read_1==1){
-                $tophat_read_2[0]=~/(.*),(.*),(.*)/;
-                ($chr_split_1, $start_split_1, $end_split_1)=($1, $2, $3);
-                $tophat_read_2[1]=~/(.*),(.*),(.*)/;
-                ($chr_split_2, $start_split_2, $end_split_2)=($1, $2, $3);
+            
+            # compare read to breakpoints
+            my ($is_left_support_breakpoint, $is_right_support_breakpoint)=(0) x 2;
+            $is_left_support_breakpoint=&compareSplitReadToBreakpoint($pos_left, $strand_left, $start_left_read, $end_left_read);
+            $is_right_support_breakpoint=&compareSplitReadToBreakpoint($pos_right, $strand_right, $start_right_read, $end_right_read);
+            
+            if($is_left_support_breakpoint==1 || $is_right_support_breakpoint==1){
+                $potential_split_read_count_tophat++;
+                $potential_split_reads_tophat.=",".$read;
+            }
+        }else{ # read report as split read by tophat
+            my ($chr_a, $start_a, $end_a, $chr_b, $start_b, $end_b); # a: left segment; b: right segment;
+            if(@tophat_read_1==2 && @tophat_read_2==2){
                 $tophat_read_1[0]=~/(.*),(.*),(.*)/;
-                ($chr_mate, $start_mate, $end_mate)=($1, $2, $3);
-            }else{
-                $tophat_read_1[0]=~/(.*),(.*),(.*)/;
-                ($chr_split_1, $start_split_1, $end_split_1)=($1, $2, $3);
+                my ($chr_1_a, $start_1_a, $end_1_a)=($1, $2, $3);
                 $tophat_read_1[1]=~/(.*),(.*),(.*)/;
-                ($chr_split_2, $start_split_2, $end_split_2)=($1, $2, $3);
+                my ($chr_1_b, $start_1_b, $end_1_b)=($1, $2, $3);
                 $tophat_read_2[0]=~/(.*),(.*),(.*)/;
-                ($chr_mate, $start_mate, $end_mate)=($1, $2, $3);
-            }
-            
-            if($chr_left eq $chr_right){
-                next if $chr_split_1 ne $chr_split_2 || $chr_split_1 ne $chr_mate || $chr_split_1 ne $chr_left;
-                if($start_split_1<$start_split_2){
-                    ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2);
-                }else{
-                    ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_2, $start_split_2, $end_split_2, $chr_split_1, $start_split_1, $end_split_1);
-                }
+                my ($chr_2_a, $start_2_a, $end_2_a)=($1, $2, $3);
+                $tophat_read_2[1]=~/(.*),(.*),(.*)/;
+                my ($chr_2_b, $start_2_b, $end_2_b)=($1, $2, $3);
+                my ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right, $chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right);
+                if($chr_left eq $chr_right){
+                    next if $chr_1_a ne $chr_1_b || $chr_2_a ne $chr_2_b || $chr_1_a ne $chr_2_a || $chr_1_a ne $chr_left;
+                    # two segment may overlap: next if $start_1_b>=$start_1_a && $start_1_b<=$end_1_a; # two segment should not overlap
+                    # two segment may overlap: next if $end_1_b>=$start_1_a && $end_1_b<=$end_1_a; # two segment should not overlap
+                    # two segment may overlap: next if $start_2_b>=$start_2_a && $start_2_b<=$end_2_a; # two segment should not overlap
+                    # two segment may overlap: next if $end_2_b>=$start_2_a && $end_2_b<=$end_2_a; # two segment should not overlap
                     
-                my $distance_mate_to_split_left=abs($start_mate-$start_split_left);
-                my $distance_mate_to_split_right=abs($start_mate-$start_split_right);
+                    if($end_1_a<$end_1_b){
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_a, $start_1_a, $end_1_a, $chr_1_b, $start_1_b, $end_1_b);
+                    }else{
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_b, $start_1_b, $end_1_b, $chr_1_a, $start_1_a, $end_1_a);
+                    }
+                    
+                    if($end_2_a<$end_2_b){
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_a, $start_2_a, $end_2_a, $chr_2_b, $start_2_b, $end_2_b);
+                    }else{
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_b, $start_2_b, $end_2_b, $chr_2_a, $start_2_a, $end_2_a);
+                    }
+                }else{
+                    if($chr_1_a eq $chr_left){
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_a, $start_1_a, $end_1_a, $chr_1_b, $start_1_b, $end_1_b);
+                    }else{
+                        ($chr_1_left, $start_1_left, $end_1_left, $chr_1_right, $start_1_right, $end_1_right)=($chr_1_b, $start_1_b, $end_1_b, $chr_1_a, $start_1_a, $end_1_a);
+                    }
+                    next if $chr_1_left ne $chr_left || $chr_1_right ne $chr_right;
+                    
+                    if($chr_2_a eq $chr_left){
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_a, $start_2_a, $end_2_a, $chr_2_b, $start_2_b, $end_2_b);
+                    }else{
+                        ($chr_2_left, $start_2_left, $end_2_left, $chr_2_right, $start_2_right, $end_2_right)=($chr_2_b, $start_2_b, $end_2_b, $chr_2_a, $start_2_a, $end_2_a);
+                    }
+                    next if $chr_2_left ne $chr_left || $chr_2_right ne $chr_right;
+                }
                 ($chr_a, $chr_b)=($chr_left, $chr_right);
-                if($distance_mate_to_split_left<$distance_mate_to_split_right){
-                    $start_a=($start_split_left<$start_mate) ? $start_split_left : $start_mate;
-                    $end_a=($end_split_left<$end_mate) ? $end_mate : $end_split_left;
-                    ($start_b, $end_b)=($start_split_right, $end_split_right);
+                $start_a=($start_1_left<$start_2_left) ? $start_1_left : $start_2_left;
+                $end_a=($end_1_left<$end_2_left) ? $end_2_left : $end_1_left;
+                next if $end_a-$start_a>$length_threshold_if_both_mate_are_split_reads; # $length_threshold_if_both_mate_are_split_reads is artifact number (200), if both reads are split reads, one segment should not longer than read length
+                $start_b=($start_1_right<$start_2_right) ? $start_1_right : $start_2_right;
+                $end_b=($end_1_right<$end_2_right) ? $end_2_right : $end_1_right;
+                next if $end_b-$start_b>$length_threshold_if_both_mate_are_split_reads; # $length_threshold_if_both_mate_are_split_reads is artifact number (200), if both reads are split reads, one segment should not longer than read length
+            }else{ # (@tophat_read_1==1 && @tophat_read_2==2) || (@tophat_read_1==2 && @tophat_read_2==1)
+                my ($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2, $chr_mate, $start_mate, $end_mate);
+                my ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right);
+                if(@tophat_read_1==1){
+                    $tophat_read_2[0]=~/(.*),(.*),(.*)/;
+                    ($chr_split_1, $start_split_1, $end_split_1)=($1, $2, $3);
+                    $tophat_read_2[1]=~/(.*),(.*),(.*)/;
+                    ($chr_split_2, $start_split_2, $end_split_2)=($1, $2, $3);
+                    $tophat_read_1[0]=~/(.*),(.*),(.*)/;
+                    ($chr_mate, $start_mate, $end_mate)=($1, $2, $3);
                 }else{
-                    ($start_a, $end_a)=($start_split_left, $end_split_left);
-                    $start_b=($start_split_right<$start_mate) ? $start_split_right : $start_mate;
-                    $end_b=($end_split_right<$end_mate) ? $end_mate : $end_split_right;
+                    $tophat_read_1[0]=~/(.*),(.*),(.*)/;
+                    ($chr_split_1, $start_split_1, $end_split_1)=($1, $2, $3);
+                    $tophat_read_1[1]=~/(.*),(.*),(.*)/;
+                    ($chr_split_2, $start_split_2, $end_split_2)=($1, $2, $3);
+                    $tophat_read_2[0]=~/(.*),(.*),(.*)/;
+                    ($chr_mate, $start_mate, $end_mate)=($1, $2, $3);
                 }
-            }else{
-                next if $chr_left ne $chr_mate && $chr_right ne $chr_mate;
                 
-                if($chr_split_1 eq $chr_left){
-                    ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2);
+                if($chr_left eq $chr_right){
+                    next if $chr_split_1 ne $chr_split_2 || $chr_split_1 ne $chr_mate || $chr_split_1 ne $chr_left;
+                    if($start_split_1<$start_split_2){
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2);
+                    }else{
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_2, $start_split_2, $end_split_2, $chr_split_1, $start_split_1, $end_split_1);
+                    }
+                        
+                    my $distance_mate_to_split_left=abs($start_mate-$start_split_left);
+                    my $distance_mate_to_split_right=abs($start_mate-$start_split_right);
+                    ($chr_a, $chr_b)=($chr_left, $chr_right);
+                    if($distance_mate_to_split_left<$distance_mate_to_split_right){
+                        $start_a=($start_split_left<$start_mate) ? $start_split_left : $start_mate;
+                        $end_a=($end_split_left<$end_mate) ? $end_mate : $end_split_left;
+                        ($start_b, $end_b)=($start_split_right, $end_split_right);
+                    }else{
+                        ($start_a, $end_a)=($start_split_left, $end_split_left);
+                        $start_b=($start_split_right<$start_mate) ? $start_split_right : $start_mate;
+                        $end_b=($end_split_right<$end_mate) ? $end_mate : $end_split_right;
+                    }
                 }else{
-                    ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_2, $start_split_2, $end_split_2, $chr_split_1, $start_split_1, $end_split_1);
+                    next if $chr_left ne $chr_mate && $chr_right ne $chr_mate;
+                    
+                    if($chr_split_1 eq $chr_left){
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_1, $start_split_1, $end_split_1, $chr_split_2, $start_split_2, $end_split_2);
+                    }else{
+                        ($chr_split_left, $start_split_left, $end_split_left, $chr_split_right, $start_split_right, $end_split_right)=($chr_split_2, $start_split_2, $end_split_2, $chr_split_1, $start_split_1, $end_split_1);
+                    }
+                    next if $chr_split_left ne $chr_left || $chr_split_right ne $chr_right;
+                    
+                    ($chr_a, $chr_b)=($chr_left, $chr_right);
+                    if($chr_left eq $chr_mate){
+                        $start_a=($start_split_left<$start_mate) ? $start_split_left : $start_mate;
+                        $end_a=($end_split_left<$end_mate) ? $end_mate : $end_split_left;
+                        ($start_b, $end_b)=($start_split_right, $end_split_right);
+                    }else{
+                        ($start_a, $end_a)=($start_split_left, $end_split_left);
+                        $start_b=($start_split_right<$start_mate) ? $start_split_right : $start_mate;
+                        $end_b=($end_split_right<$end_mate) ? $end_mate : $end_split_right;
+                    }
                 }
-                next if $chr_split_left ne $chr_left || $chr_split_right ne $chr_right;
                 
-                ($chr_a, $chr_b)=($chr_left, $chr_right);
-                if($chr_left eq $chr_mate){
-                    $start_a=($start_split_left<$start_mate) ? $start_split_left : $start_mate;
-                    $end_a=($end_split_left<$end_mate) ? $end_mate : $end_split_left;
-                    ($start_b, $end_b)=($start_split_right, $end_split_right);
-                }else{
-                    ($start_a, $end_a)=($start_split_left, $end_split_left);
-                    $start_b=($start_split_right<$start_mate) ? $start_split_right : $start_mate;
-                    $end_b=($end_split_right<$end_mate) ? $end_mate : $end_split_right;
-                }
             }
             
-        }
-        
-        # compare read to breakpoints
-        my ($is_left_support_breakpoint, $is_right_support_breakpoint)=(0) x 2;
-        $is_left_support_breakpoint=&compareSplitReadToBreakpoint($pos_left, $strand_left, $start_a, $end_a);
-        $is_right_support_breakpoint=&compareSplitReadToBreakpoint($pos_right, $strand_right, $start_b, $end_b);
-        
-        if($is_left_support_breakpoint==1 && $is_right_support_breakpoint==1){
-            $split_read_count_tophat++;
-            $split_reads_tophat.=",".$read;
+            # compare read to breakpoints
+            my ($is_left_support_breakpoint, $is_right_support_breakpoint)=(0) x 2;
+            $is_left_support_breakpoint=&compareSplitReadToBreakpoint($pos_left, $strand_left, $start_a, $end_a);
+            $is_right_support_breakpoint=&compareSplitReadToBreakpoint($pos_right, $strand_right, $start_b, $end_b);
+            
+            if($is_left_support_breakpoint==1 && $is_right_support_breakpoint==1){
+                $split_read_count_tophat++;
+                $split_reads_tophat.=",".$read;
+            }
         }
     }
     
@@ -275,15 +497,15 @@ while(<IN>){
             
             $read_distance_to_left.=",".$temp_distance_left;
             $read_distance_to_right.=",".$temp_distance_right;
-            if($min_distance_left eq "NA"){
-                $min_distance_left=$temp_distance_left;
-            }elsif($min_distance_left>$temp_distance_left){
-                $min_distance_left=$temp_distance_left;
+            if($min_read_pair_distance_left eq "NA"){
+                $min_read_pair_distance_left=$temp_distance_left;
+            }elsif($min_read_pair_distance_left>$temp_distance_left){
+                $min_read_pair_distance_left=$temp_distance_left;
             }
-            if($min_distance_right eq "NA"){
-                $min_distance_right=$temp_distance_right;
-            }elsif($min_distance_right>$temp_distance_right){
-                $min_distance_right=$temp_distance_right;
+            if($min_read_pair_distance_right eq "NA"){
+                $min_read_pair_distance_right=$temp_distance_right;
+            }elsif($min_read_pair_distance_right>$temp_distance_right){
+                $min_read_pair_distance_right=$temp_distance_right;
             }
         }
     }
@@ -293,9 +515,9 @@ while(<IN>){
     $read_distance_to_left=~s/NA,//;
     $read_distance_to_right=~s/NA,//;
     say join "\t", ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $cluster_id,
-        $split_read_count_tophat, $read_pair_count_tophat,
-        $min_distance_left, $min_distance_right,
-        $split_reads_tophat, $read_pairs_tophat,
+        $split_read_count, $read_pair_count, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat,
+        $min_read_pair_distance_left, $min_read_pair_distance_right,
+        $split_reads, $read_pairs, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat,
         $read_distance_to_left, $read_distance_to_right);
 }
 close(IN);

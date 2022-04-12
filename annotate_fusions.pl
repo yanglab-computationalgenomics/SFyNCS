@@ -1,12 +1,13 @@
 #!/usr/bin/env perl
 
-# 2022-03-22
+# 2022-04-12
 
 # 1. Function
 # Annotate fusions
-# Filter fusion locate in the same gene
+# Filter fusion locate in the same gene (didn't do this for sherlock sample)
 # Swith left and right segment so fusion is in sense-sense orientation
 # Genes were classify to two categories: protein_coding_gene and non_protein_coding_gene
+# Add is in the same genee (for sherlock)
 
 # 2. Input
 # 2.1. Annotation file (must have header, Gene Predictions Extended or gpe format)
@@ -33,25 +34,45 @@
 # column 4: chromosome of right segment
 # column 5: right segment site
 # column 6: strand of the right segment
-# column 7: split read count (processed by tophat and blat)
-# column 8: read pair count (processed by tophat)
-# column 9: minimum distance of read pair to left breakpoint 
-# column 10: minimum distance of read pair to right breakpoint 
-# column 11: identity
-# column 12: minimum blat distace of left breakpoint (use mean if both read 1 and read 2 are split read)
-# column 13: minimum blat distace of right breakpoint (use mean if both read 1 and read 2 are split read)
-# column 14: total clusters in cluster (left)
-# column 15: total clusters in cluster (right)
-# column 16: total clusters in cluster (merge)
-# column 17: (discordant read)% support fusion
-# column 18: sd of (discordant read)% in each of cluster (left)
-# column 19: sd of (discordant read)% in each of cluster (right)
-# column 20: split reads (processed by tophat and blat)
-# column 21: read pairs (processed by tophat)
-# column 22: overlapped cluster ids (left)
-# column 23: overlapped cluster ids (right)
-# column 24: total reads in each cluster (left)
-# column 25: total reads in each cluster (right)
+# column 7: split read count (star)
+# column 8: read pair count (star)
+# column 9: split read count (processed by tophat)
+# column 10: potential split read count (processed by tophat)
+# column 11: read pair count (processed by tophat)
+# column 12: split read count (blat tophat split reads and tophat potential split reads)
+# column 13: split read count (blat tophat split reads)
+# column 14: minimum distance of read pair to left breakpoint 
+# column 15: minimum distance of read pair to right breakpoint 
+# column 16: identity
+# column 17: minimum blat distace of left breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 18: minimum blat distace of right breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 19: minimum blat distace of left breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 20: minimum blat distace of right breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 21: is canonical split site
+# column 22: total clusters in cluster (left)
+# column 23: total clusters in cluster (right)
+# column 24: total clusters in cluster (merge)
+# column 25: (discordant read)% support fusion
+# column 26: sd of (discordant read)% in each of cluster (left)
+# column 27: sd of (discordant read)% in each of cluster (right)
+# column 28: split reads (star)
+# column 29: read pairs (star)
+# column 30: split reads (processed by tophat)
+# column 31: potential split reads (processed by tophat)
+# column 32: read pairs (processed by tophat)
+# column 33: split reads (blat tophat split read and tophat potential split read)
+# column 34: distance of read pair to left breakpoint
+# column 35: distance of read pair to right breakpoint
+# column 36: distace of split read to left breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 37: distace of split read to right breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 38: distace of split read to left breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 39: distace of split read to right breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 40: alignment of left segment
+# column 41: alignment of right segment
+# column 42: overlapped cluster ids (left)
+# column 43: overlapped cluster ids (right)
+# column 44: total reads in each cluster (left)
+# column 45: total reads in each cluster (right)
 
 # 3. Output
 # column 1: chromosome of the left segment
@@ -60,22 +81,47 @@
 # column 4: chromosome of right segment
 # column 5: right segment site
 # column 6: strand of the right segment
-# column 7: split read count (processed by tophat and blat)
-# column 8: read pair count (processed by tophat)
-# column 9: minimum distance of read pair to left breakpoint 
-# column 10: minimum distance of read pair to right breakpoint 
-# column 11: identity
-# column 12: minimum blat distace of left breakpoint (use mean if both read 1 and read 2 are split read)
-# column 13: minimum blat distace of right breakpoint (use mean if both read 1 and read 2 are split read)
-# column 14: total clusters in cluster (left)
-# column 15: total clusters in cluster (right)
-# column 16: total clusters in cluster (merge)
-# column 17: (discordant read)% support fusion
-# column 18: sd of (discordant read)% in each of cluster (left)
-# column 19: sd of (discordant read)% in each of cluster (right)
-# column 20: fusion annotations
-# column 21: split reads (processed by tophat and blat)
-# column 22: read pairs (processed by tophat)
+# column 7: split read count (star)
+# column 8: read pair count (star)
+# column 9: split read count (processed by tophat)
+# column 10: potential split read count (processed by tophat)
+# column 11: read pair count (processed by tophat)
+# column 12: split read count (blat tophat split reads and tophat potential split reads)
+# column 13: split read count (blat tophat split reads)
+# column 14: minimum distance of read pair to left breakpoint 
+# column 15: minimum distance of read pair to right breakpoint 
+# column 16: identity
+# column 17: minimum blat distace of left breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 18: minimum blat distace of right breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 19: minimum blat distace of left breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 20: minimum blat distace of right breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 21: is canonical split site
+# column 22: total clusters in cluster (left)
+# column 23: total clusters in cluster (right)
+# column 24: total clusters in cluster (merge)
+# column 25: (discordant read)% support fusion
+# column 26: sd of (discordant read)% in each of cluster (left)
+# column 27: sd of (discordant read)% in each of cluster (right)
+# column 28: is in the same gene
+# column 29: fusion annotations
+# column 30: split reads (star)
+# column 31: read pairs (star)
+# column 32: split reads (processed by tophat)
+# column 33: potential split reads (processed by tophat)
+# column 34: read pairs (processed by tophat)
+# column 35: split reads (blat tophat split read and tophat potential split read)
+# column 36: distance of read pair to left breakpoint
+# column 37: distance of read pair to right breakpoint
+# column 38: distace of split read to left breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 39: distace of split read to right breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 40: distace of split read to left breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 41: distace of split read to right breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
+# column 42: alignment of left segment
+# column 43: alignment of right segment
+# column 44: overlapped cluster ids (left)
+# column 45: overlapped cluster ids (right)
+# column 46: total reads in each cluster (left)
+# column 47: total reads in each cluster (right)
 
 
 
@@ -123,29 +169,39 @@ while(<IN>){
 }
 close(IN);
 
-say join "\t", ("Chr_1", "Breakpoint_1", "Strand_1", "Chr_2", "Breakpoint_2", "Strand_2",
-     "Split_read_count_(Tophat_and_Blat)", "Read_pair_count_(Tophat)",
-     "Minimum_read_distance_to_left", "Minimum_read_distance_to_right",
-     "Identity", "Minimum_blat_distance_to_1", "Minimum_blat_distance_to_2",
-     "Total_clusters_1", "Total_clusters_2", "Total_clusters_(merge)",
-     "(discordant_reads)%_support_fusion",
-     "SD_(discordant_reads)%_in_clusters_1", "SD_(discordant_reads)%_in_clusters_2",
-     "Fusion_annotations",
-     "Split_reads_(tophat_and_blat)", "Read_pairs_(tophat)");
+say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right", "Strand_right",
+    "Split_read_count_(star)", "Read_pair_count_(star)", "Split_read_count_(tophat)", "Potential_split_read_count_(tophat)", "Read_pair_count_(tophat)", "Split_read_count_(blat_tophat_split_and_tophat_potential_split_reads)", "Split_read_count_(blat_tophat_split_reads)",
+    "Minimum_read_pair_distance_to_left", "Minimum_read_pair_distance_to_right",
+    "Identity", "Minimum_blat_distance_to_left_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_right_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_left_(tophat_split_reads)", "Minimum_blat_distance_to_right_(tophat_split_reads)",
+    "Is_canonical_motif",
+    "Total_clusters_(left)", "Total_clusters_(right)", "Total_clusters_(merge)",
+    "(discordant_reads)%_support_fusion",
+    "SD_(discordant_reads)%_in_clusters_(left)", "SD_(discordant_reads)%_in_clusters_(right)",
+    "Is_in_the_same_gene", "Fusion_annotations",
+    "Split_reads_(star)", "Read_pairs_(star)", "Split_reads_(tophat)", "Potential_split_reads_(tophat)", "Read_pairs_(tophat)", "Split_reads_(blat_tophat_split_and_tophat_potential_split_reads)",
+    "Read_pair_distance_to_left", "Read_pair_distance_to_right",
+    "Blat_distance_to_left_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_right_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_left_(tophat_split_reads)", "Blat_distance_to_right_(tophat_split_eads)",
+    "Identity_align_left", "Identity_align_right",
+    "Cluster_ids_left", "Cluster_ids_right",
+    "Total_reads_in_each_cluster_left", "Total_reads_in_each_cluster_right");
 open IN, $ARGV[1] or die "Can't open $ARGV[1]:$!";
 # input have header
 <IN>;
 while(<IN>){
     chomp;
     my ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right,
-        $split_read_count_blat, $read_pair_count_tophat,
-        $min_read_pair_distance_left, $min_read_pair_distance_right,
-        $identity_output, $minimum_blat_distance_left, $minimum_blat_distance_right,
-        $total_clusters_left, $total_clusters_right, $total_clusters,
+        $split_read_count_star, $read_pair_count_star, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat, $split_read_count_blat, $split_read_count_blat_base_on_tophat_split_read,
+        $min_read_pair_distance_left, $min_read_pair_distance_right, $identity_output,
+	$minimum_blat_distance_left, $minimum_blat_distance_right, $minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+        $is_split_site_contain_canonical_motif,
+	$total_clusters_left, $total_clusters_right, $total_clusters,
         $percentage_support_fusion,
         $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
-        $split_reads_blat, $read_pairs_tophat,
-	$cluster_ids_left, $cluster_ids_right,
+        $split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat, $split_reads_blat,
+        $read_pair_distance_to_left, $read_pair_distance_to_right, 
+	$blat_distance_left, $blat_distance_right, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
+	$identity_seq_left, $identity_seq_right,
+        $cluster_ids_left, $cluster_ids_right,
         $total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right)=split "\t", $_;
     
     my (@Transcripts_left, @Transcripts_right);
@@ -166,7 +222,8 @@ while(<IN>){
     
     
     my (@sense_fusions, @sense_fusions_switch_segment, @fusion_to_unannotated, @fusion_to_unannotated_switch_segment); # @sense_fusions keep current segment order, @sense_fusions_switch_segment swith left and right fusion segment
-    my $is_in_the_same_gene=0;
+    my $is_in_the_same_gene="N";
+    my $temp_int_the_same_gene_symbol; # use for sherlock
     foreach my $transcript_left (@Transcripts_left){
 	my ($transcript_id_left, $chr_transcript_left, $strand_transcript_left, $transcript_start_left, $transcript_end_left, $cds_start_left, $cds_end_left,
 	    $exon_count_left, $exon_starts_left, $exon_ends_left, $score_left, $symbol_left, $cds_start_stat_left, $cds_end_stat_left, $exon_frames_left)=split "\t", $transcript_left;
@@ -175,8 +232,12 @@ while(<IN>){
 		$exon_count_right, $exon_starts_right, $exon_ends_right, $score_right, $symbol_right, $cds_start_stat_right, $cds_end_stat_right, $exon_frames_right)=split "\t", $transcript_right;
 	    
 	    if($strand_left eq '+' && $strand_right eq '-' && $symbol_left eq $symbol_right && $symbol_left ne "NA"){
-		$is_in_the_same_gene=1;
+		$is_in_the_same_gene="Y";
+		$temp_int_the_same_gene_symbol=$symbol_left;
 		goto OUTPUT;
+	    }
+	    if($symbol_left eq $symbol_right && $symbol_left ne "NA"){ # for sherlock, can be deleted
+		$is_in_the_same_gene="Y";
 	    }
 	    
 	    # 1. if $strand_left ne $strand_right, $strand_transcript_left eq $strand_transcript_right will be a valid fusion
@@ -323,17 +384,23 @@ while(<IN>){
     }
     
     OUTPUT: say join "\t",($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right,
-        $split_read_count_blat, $read_pair_count_tophat,
-        $min_read_pair_distance_left, $min_read_pair_distance_right,
-        $identity_output, $minimum_blat_distance_left, $minimum_blat_distance_right,
-        $total_clusters_left, $total_clusters_right, $total_clusters,
+        $split_read_count_star, $read_pair_count_star, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat, $split_read_count_blat, $split_read_count_blat_base_on_tophat_split_read,
+        $min_read_pair_distance_left, $min_read_pair_distance_right, $identity_output,
+	$minimum_blat_distance_left, $minimum_blat_distance_right, $minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+        $is_split_site_contain_canonical_motif,
+	$total_clusters_left, $total_clusters_right, $total_clusters,
         $percentage_support_fusion,
-        $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
-	$fusion_annotation,
-        $split_reads_blat, $read_pairs_tophat) if $is_in_the_same_gene==0;
+	$sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
+	$is_in_the_same_gene, $fusion_annotation,
+        $split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat, $split_reads_blat,
+        $read_pair_distance_to_left, $read_pair_distance_to_right, 
+	$blat_distance_left, $blat_distance_right, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
+	$identity_seq_left, $identity_seq_right,
+        $cluster_ids_left, $cluster_ids_right,
+        $total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right); # add "if $is_in_the_same_gene==Y" later, this is use for sherlock
 }
 
-system('rm temp_annotation.bed temp_fusion_breakpoint.bed temp_overlapped_gene.tsv');
+system('rm -f temp_annotation.bed temp_fusion_breakpoint.bed temp_overlapped_gene.tsv');
 
 sub selectLongestExonTranscript{
     my ($chr, $pos)=@_;

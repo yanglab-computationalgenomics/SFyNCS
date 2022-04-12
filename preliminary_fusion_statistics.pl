@@ -156,7 +156,7 @@ while(<IN>){
     $chr_right=~s/chrX/chr23/;
     $chr_right=~s/chrY/chr24/;
     my $temp_key=join ",", ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right);
-    $select_fusions{$temp_key}=0;
+    $select_fusions{$temp_key}{temp}=0;
 }
 close(IN);
 
