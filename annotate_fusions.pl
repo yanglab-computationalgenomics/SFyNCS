@@ -341,16 +341,29 @@ while(<IN>){
 	    foreach my $temp_value (@fusion_to_unannotated_switch_segment){
 		$fusion_annotation.=";".$temp_value;
 	    }
+	    # swith left and right
 	    ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right,
-	    $min_read_pair_distance_left, $min_read_pair_distance_right,
-	    $minimum_blat_distance_left, $minimum_blat_distance_right,
-	    $total_clusters_left, $total_clusters_right,
-	    $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right)=(
-		$chr_right, $pos_right, $strand_right, $chr_left, $pos_left, $strand_left,
-		$min_read_pair_distance_right, $min_read_pair_distance_left,
-		$minimum_blat_distance_right, $minimum_blat_distance_left,
-		$total_clusters_right, $total_clusters_left,
-		$sd_percentage_discorant_read_in_each_cluster_right, $sd_percentage_discorant_read_in_each_cluster_left);
+		$min_read_pair_distance_left, $min_read_pair_distance_right,
+		$minimum_blat_distance_left, $minimum_blat_distance_right,
+		$minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+		$total_clusters_left, $total_clusters_right,
+		$sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
+		$read_pair_distance_to_left, $read_pair_distance_to_right,
+		$blat_distance_left, $blat_distance_right, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
+		$identity_seq_left, $identity_seq_right,
+		$cluster_ids_left, $cluster_ids_right,
+		$total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right)=(
+		    $chr_right, $pos_right, $strand_right, $chr_left, $pos_left, $strand_left,
+		    $min_read_pair_distance_right, $min_read_pair_distance_left,
+		    $minimum_blat_distance_right, $minimum_blat_distance_left,
+		    $minimum_blat_distance_base_on_tophat_split_read_right, $minimum_blat_distance_base_on_tophat_split_read_left,
+		    $total_clusters_right, $total_clusters_left,
+		    $sd_percentage_discorant_read_in_each_cluster_right, $sd_percentage_discorant_read_in_each_cluster_left,
+		    $read_pair_distance_to_right, $read_pair_distance_to_left,
+		    $blat_distance_right, $blat_distance_left, $blat_distance_base_on_tophat_split_read_right, $blat_distance_base_on_tophat_split_read_left,
+		    $identity_seq_right, $identity_seq_left,
+		    $cluster_ids_right, $cluster_ids_left,
+		    $total_reads_in_each_cluster_right, $total_reads_in_each_cluster_left);
 	}
 	$fusion_annotation=~s/NA;//;
     }else{ # $sense_fusion_count+$sense_fusion_switch_count>0
@@ -369,16 +382,29 @@ while(<IN>){
 	    foreach my $temp_value (@sense_fusions_switch_segment){
 		$fusion_annotation.=";".$temp_value;
 	    }
+	    # swith left and right
 	    ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right,
-	    $min_read_pair_distance_left, $min_read_pair_distance_right,
-	    $minimum_blat_distance_left, $minimum_blat_distance_right,
-	    $total_clusters_left, $total_clusters_right,
-	    $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right)=(
-		$chr_right, $pos_right, $strand_right, $chr_left, $pos_left, $strand_left,
-		$min_read_pair_distance_right, $min_read_pair_distance_left,
-		$minimum_blat_distance_right, $minimum_blat_distance_left,
-		$total_clusters_right, $total_clusters_left,
-		$sd_percentage_discorant_read_in_each_cluster_right, $sd_percentage_discorant_read_in_each_cluster_left);
+		$min_read_pair_distance_left, $min_read_pair_distance_right,
+		$minimum_blat_distance_left, $minimum_blat_distance_right,
+		$minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+		$total_clusters_left, $total_clusters_right,
+		$sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
+		$read_pair_distance_to_left, $read_pair_distance_to_right,
+		$blat_distance_left, $blat_distance_right, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
+		$identity_seq_left, $identity_seq_right,
+		$cluster_ids_left, $cluster_ids_right,
+		$total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right)=(
+		    $chr_right, $pos_right, $strand_right, $chr_left, $pos_left, $strand_left,
+		    $min_read_pair_distance_right, $min_read_pair_distance_left,
+		    $minimum_blat_distance_right, $minimum_blat_distance_left,
+		    $minimum_blat_distance_base_on_tophat_split_read_right, $minimum_blat_distance_base_on_tophat_split_read_left,
+		    $total_clusters_right, $total_clusters_left,
+		    $sd_percentage_discorant_read_in_each_cluster_right, $sd_percentage_discorant_read_in_each_cluster_left,
+		    $read_pair_distance_to_right, $read_pair_distance_to_left,
+		    $blat_distance_right, $blat_distance_left, $blat_distance_base_on_tophat_split_read_right, $blat_distance_base_on_tophat_split_read_left,
+		    $identity_seq_right, $identity_seq_left,
+		    $cluster_ids_right, $cluster_ids_left,
+		    $total_reads_in_each_cluster_right, $total_reads_in_each_cluster_left);
 	}
 	$fusion_annotation=~s/NA;//;
     }
