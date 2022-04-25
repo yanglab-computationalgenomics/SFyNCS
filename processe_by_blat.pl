@@ -206,7 +206,7 @@ while(<IN>){
 		$split_read_count_blat++;
 	    }
 	    
-	    # get distance to fusion breakpoint
+	    # get distance to fusion breakpoint, can include this to above if($is_support_split_1==1 || $is_support_split_2==1) later 
 	    my ($blat_distance_left_1, $blat_distance_right_1)=&getDistanceInBlat($blockSizes_1, $tStarts_1);
 	    my ($blat_distance_left_2, $blat_distance_right_2)=&getDistanceInBlat($blockSizes_2, $tStarts_2);
 	    
