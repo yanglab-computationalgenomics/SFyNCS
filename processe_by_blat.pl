@@ -191,15 +191,16 @@ while(<IN>){
 		}
 		
 		my $is_multiple_aligned_read_support_fusion=0;
-		$is_multiple_aligned_read_support_fusion=1 if ($temp_multiple_end_1<=$left_pos_in_artifact_seq && $temp_start_2>=$right_pos_in_artifact_seq) || ($temp_multiple_end_2<=$left_pos_in_artifact_seq && $temp_start_1>=$right_pos_in_artifact_seq);
+		#$is_multiple_aligned_read_support_fusion=1 if ($temp_multiple_end_1<=$left_pos_in_artifact_seq && $temp_start_2>=$right_pos_in_artifact_seq) || ($temp_multiple_end_2<=$left_pos_in_artifact_seq && $temp_start_1>=$right_pos_in_artifact_seq);
+		$is_multiple_aligned_read_support_fusion=1 if ($temp_multiple_end_1<=$left_pos_in_artifact_seq && ($temp_multiple_start_2+1)>=$right_pos_in_artifact_seq) || ($temp_multiple_end_2<=$left_pos_in_artifact_seq && ($temp_multiple_start_1+1)>=$right_pos_in_artifact_seq);
 		next if $is_multiple_aligned_read_support_fusion==0;
 		($name_1, $start_1, $end_1)=($temp_multiple_name, $temp_multiple_start_1, $temp_multiple_end_1); # randomly select one alignment
 		($blockSizes_1, $tStarts_1)=($temp_multiple_start_1, $temp_multiple_end_1);
 	    }
 	    
 	    my ($is_support_split_1, $is_support_split_2)=(0) x 2;
-	    $is_support_split_1=1 if $left_pos_in_artifact_seq>$start_1 && $right_pos_in_artifact_seq<$end_1;
-	    $is_support_split_2=1 if $left_pos_in_artifact_seq>$start_2 && $right_pos_in_artifact_seq<$end_2;
+	    $is_support_split_1=1 if $left_pos_in_artifact_seq>($start_1+1) && $right_pos_in_artifact_seq<$end_1;
+	    $is_support_split_2=1 if $left_pos_in_artifact_seq>($start_2+1) && $right_pos_in_artifact_seq<$end_2;
 	    if($is_support_split_1==1 || $is_support_split_2==1){
 		$split_reads_blat.=",".$read;
 		$split_read_count_blat++;
