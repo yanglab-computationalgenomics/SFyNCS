@@ -98,3 +98,6 @@ For gene with multiple transcripts, the longest transcript defined as total leng
 There are two potential fusions: gene_A--gene_B fusion and gene_D--gene_C fusion, fusion position will added to gene_D--gene_C to keep one row only in output and it would be like: gene_D--gene_C,transcript_id_D--transcript_id_C,gene_type_D--gene_type_C,breakpoint_position_D--breakpoint_position_C,fusion_region_type_D--fusion_region_type_C,chr2:200:---chr1:110:+
 ```
 
+#### Issue
+use tophat 2.1.0 if having following issue:
+"./SeqAn-1.4.2/seqan/basic/basic_exception.h:236 FAILED!  (Uncaught exception of type St12out_of_range: basic_string::substr: __pos (which is 40) > this->size() (which is 0))"
