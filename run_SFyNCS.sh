@@ -121,10 +121,13 @@ fi
 # 2. Format and generate preliminary fusions
 echo -e "\nStep 2: Generating preliminary fusions"
 perl $toolDir/format_STAR_chimeric_file.pl  star_output/Chimeric.out.junction >format_chimeric.tsv
-perl $toolDir/remove_multiple_mapped_reads.pl format_chimeric.tsv >no_multiple-mapped.tsv
-perl $toolDir/remove_duplicate_reads.pl no_multiple-mapped.tsv | sort | uniq >no_duplicate.tsv
-perl $toolDir/merge_ajacent_breakpoints.pl no_duplicate.tsv >merge_adjacent.tsv
-perl $toolDir/cluster_discordant_reads.pl merge_adjacent.tsv >cluster.tsv
+perl $toolDir/remove_multiple_mapped_reads.pl format_chimeric.tsv >no_multiple_mapped.tsv
+perl $toolDir/remove_duplicate_reads.pl no_multiple_mapped.tsv >temp_no_duplicate.tsv # sort may put Chr_left to last line
+head -n 1 temp_no_duplicate.tsv >no_duplicate.tsv
+sort temp_no_duplicate.tsv | uniq | grep -v "Chr_left" >>no_duplicate.tsv
+rm temp_no_duplicate.tsv
+perl $toolDir/merge_ajacent_breakpoints.pl no_duplicate.tsv >merge_ajacent.tsv
+perl $toolDir/cluster_discordant_reads.pl merge_ajacent.tsv >cluster.tsv
 awk 'BEGIN{FS=OFS="\t"} NR>1{print $1,$2-1,$2,$3,$7,$8,$9; print $4,$5-1,$5,$6,$7,$8,$9;}' cluster.tsv | sort -k1,1 -k2,2n | uniq >temp_cluster.bed
 perl $toolDir/identify_fusion_candidates_from_cluster_reads.pl cluster.tsv >preliminary_candidates.tsv
 # split_read >=1 && read_pair>=1 && split_read+read_pair>=3, remove chrM related fusions,  some reads not align correctly with read_pair>=1 && split_read+read_pair>=3 (TCGA-BT-A3PJ-01A-21R-A220-07, UNC14-SN744:245:C0WYWACXX:1:2204:5085:43661)
@@ -132,7 +135,7 @@ perl $toolDir/identify_fusion_candidates_from_cluster_reads.pl cluster.tsv >prel
 # split_read >=1, remove chrM related fusions
 awk 'NR==1 || $9>0' preliminary_candidates.tsv | grep -v chrM >temp.tsv
 mv temp.tsv preliminary_candidates.tsv
-rm cluster.tsv format_chimeric.tsv merge_adjacent.tsv no_duplicate.tsv no_multiple-mapped.tsv
+rm cluster.tsv format_chimeric.tsv merge_ajacent.tsv no_duplicate.tsv no_multiple_mapped.tsv
 rm -rf star_output
 
 
