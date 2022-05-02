@@ -303,6 +303,8 @@ rm -rf chunk*
 cd ${output_directory}
 rm -rf temp_output_SFyNCS
 cut -f1-29 fusions.tsv >fusions_abridged.tsv
+[ -e fusions.tsv.gz ] && rm fusions.tsv.gz
+[ -e fusions_abridged.tsv.gz ] && rm fusions_abridged.tsv.gz
 gzip fusions.tsv
 gzip fusions_abridged.tsv
 cd $current_directory
