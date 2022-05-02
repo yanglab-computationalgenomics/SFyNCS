@@ -71,7 +71,7 @@ star_index=$(readlink -f $star_index)
 tophat_index=$(readlink -f $tophat_index)
 toolDir=$(readlink -f $0 | xargs dirname)
 output_directory=$(readlink -f $output_directory)
-[ -e ${output_directory}/temp_output_SFyNCS ] && echo "Have ${output_directory}/temp_output_SFyNCS, please rename or delete the directory" && exit
+[ -e ${output_directory}/temp_output_SFyNCS ] && rm -rf ${output_directory}/temp_output_SFyNCS
 mkdir -p ${output_directory}/temp_output_SFyNCS && cd ${output_directory}/temp_output_SFyNCS
 ln -s $fastq_1 1.fastq
 ln -s $fastq_2 2.fastq
