@@ -8,7 +8,7 @@ Description:
     This script was used to identify fusion transcripts from pair-end RNA-seq data.
         
 Usage ([optional options] <must be provided options>):
-    $0 [-p 1 -o output -c Chimeric.out.junction] [-s star_index] <-a annotation_file> <-g genome_fasta> <-t tophat_index> <read_1.fastq|read_1.fastq.gz> <read_2.fastq|read_2.fastq.gz> 
+    $0 [-p 1 -o output -c Chimeric.out.junction -s star_index] <-a annotation_file> <-g genome_fasta> <-t tophat_index> <read_1.fastq|read_1.fastq.gz> <read_2.fastq|read_2.fastq.gz> 
     
 Options:
     -a Gene annotation file.
