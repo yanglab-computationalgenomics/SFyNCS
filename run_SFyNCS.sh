@@ -8,7 +8,7 @@ Description:
     This script was used to identify fusion transcripts from pair-end RNA-seq data.
         
 Usage ([optional options] <must be provided options>):
-    $0 [-p 1 -o output] <-a annotation_file> <-g genome_fasta> <-s star_index> <-t tophat_index> <read_1.fastq|read_1.fastq.gz> <read_2.fastq|read_2.fastq.gz> 
+    $0 [-p 1 -o output -c Chimeric.out.junction] <-a annotation_file> <-g genome_fasta> <-s star_index> <-t tophat_index> <read_1.fastq|read_1.fastq.gz> <read_2.fastq|read_2.fastq.gz> 
     
 Options:
     -a Gene annotation file.
@@ -98,7 +98,7 @@ fi
 
 
 # 1. Align fastq with STAR
-echo -e "Step 1: Getting discordant information file with STAR"
+echo -e "Step 1: Generate Chimeric.out.junction by running STAR or make a soft link to provided Chimeric.out.junction"
 mkdir star_output
 if [ -z $chimeric_file ]; then
     STAR --genomeDir $star_index  \
