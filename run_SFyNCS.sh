@@ -54,7 +54,7 @@ shift $((OPTIND - 1))
 
 [ -z $annotation_file ] && echo "Please provide gene annotation with -a" && usage
 [ -z $genome_fasta ] && echo "Please provide genome fasta with -g" && usage
-[ -z $star_index ] && echo "Please provide STAR index with -s" && usage 
+([ -z $star_index ] && [ -z $chimeric_file ]) && echo "Please provide STAR index with -s or Chimeric.out.junction with -c" && usage 
 [ -z $tophat_index ] && echo "Please provide Tophat index with -t" && usage
 
 function runningTime(){
@@ -83,14 +83,8 @@ output_directory=$(readlink -f $output_directory)
 [ -e ${output_directory}/temp_output_SFyNCS ] && rm -rf ${output_directory}/temp_output_SFyNCS
 mkdir -p ${output_directory}/temp_output_SFyNCS && cd ${output_directory}/temp_output_SFyNCS
 if echo $fastq_1 | grep -q ".gz$"; then
-    cp $fastq_1 temp.fastq.gz
-    gunzip temp.fastq.gz
-    mv temp.fastq 1.fastq
-    [ -e temp.fastq.gz ] && rm temp.fastq.gz
-    cp $fastq_2 temp.fastq.gz
-    gunzip temp.fastq.gz
-    mv temp.fastq 2.fastq
-    [ -e temp.fastq.gz ] && rm temp.fastq.gz
+    ln -s $fastq_1 1.fastq.gz
+    ln -s $fastq_2 2.fastq.gz
 else
     ln -s $fastq_1 1.fastq
     ln -s $fastq_2 2.fastq
@@ -101,11 +95,7 @@ fi
 echo -e "Step 1: Generate Chimeric.out.junction by running STAR or make a soft link to provided Chimeric.out.junction"
 mkdir star_output
 if [ -z $chimeric_file ]; then
-    STAR --genomeDir $star_index  \
-        --readFilesIn 1.fastq 2.fastq  \
-        --runThreadN $thread_number \
-        --outFileNamePrefix star_output/ \
-        --outReadsUnmapped None  \
+    star_common_command="--outReadsUnmapped None  \
         --twopassMode Basic \
         --outSAMstrandField intronMotif  \
         --outSAMunmapped Within  \
@@ -123,7 +113,12 @@ if [ -z $chimeric_file ]; then
         --peOverlapNbasesMin 12 \
         --peOverlapMMp 0.1  \
         --outSAMtype BAM SortedByCoordinate \
-        --genomeLoad NoSharedMemory
+        --genomeLoad NoSharedMemory"
+    if echo $fastq_1 | grep -q ".gz$"; then
+        STAR --genomeDir $star_index --runThreadN $thread_number --outFileNamePrefix star_output/ $star_common_command --readFilesIn 1.fastq.gz 2.fastq.gz --readFilesCommand zcat
+    else
+        STAR --genomeDir $star_index --runThreadN $thread_number --outFileNamePrefix star_output/ $star_common_command --readFilesIn 1.fastq 2.fastq
+    fi
 else
     ln -s $chimeric_file $PWD/star_output/Chimeric.out.junction
 fi
@@ -166,8 +161,7 @@ rm -rf star_output
 # 3. process preliminary fusions with tophat
 echo -e "\nStep 3: Processing with Tophat"
 cut -f11,12 preliminary_candidates.tsv | sed "s#\t#\n#;s#,#\n#g" | grep -vw "NA" | grep -vP "Split_reads|Read_pairs" | sort | uniq >selected_discordant_reads.tsv
-perl $toolDir/select_fastq.pl -s selected_discordant_reads.tsv 1.fastq 2.fastq >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
-rm 1.fastq 2.fastq
+perl $toolDir/select_fastq.pl -s selected_discordant_reads.tsv 1.fastq* 2.fastq* >selected_discordant_reads_1.fastq 2>selected_discordant_reads_2.fastq
 rm selected_discordant_reads.tsv
 
 tophat --no-coverage-search \

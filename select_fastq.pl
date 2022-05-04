@@ -34,7 +34,11 @@ while(<IN>){
 }
 close(IN);
 
-open IN, $ARGV[1];
+if($ARGV[1]=~/.gz$/){
+    open IN, "zcat $ARGV[1] | ";
+}else{
+    open IN, $ARGV[1];
+}
 while(<IN>){
     chomp;
     my $name=$_;
@@ -55,7 +59,11 @@ while(<IN>){
 }
 close(IN);
 
-open IN, $ARGV[2];
+if($ARGV[2]=~/.gz$/){
+    open IN, "zcat $ARGV[2] | ";
+}else{
+    open IN, $ARGV[2];
+}
 while(<IN>){
     chomp;
     my $name=$_;
@@ -80,7 +88,7 @@ close(IN);
 sub usage{
     my $scriptName = basename $0;
 print <<HELP;
-Usage: perl $scriptName reads_name.tsv 1.fastq 2.fastq >output_1.fastq 2>output_2.fastq
+Usage: perl $scriptName reads_name.tsv 1.fastq|1.fastq.gz 2.fastq|2.fastq.gz >output_1.fastq 2>output_2.fastq
 Options:
 
     -h --help		print this help information
