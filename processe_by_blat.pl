@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# 2022-04-12
+# 2022-06-14
 
 # 1. Function
 # Add blat supported statistics
@@ -10,6 +10,7 @@
 # 1.4. for each read, select the best pslScore as alignment. If there are more than two alignments have best pslScore, this read will not support breakpoint
 # 1.5. calculate sequence identity after taking --length_for_identity bp flanking sequence and align them with Needleman Wunsch algorithm 
 # 1.6. calculate the distance between segment and artifact breakpoints 
+# 1.7. scan for canonical split motif in region defined by --motif_searching_length
 
 # 2. Input
 # column 1: chromosome of the left segment
