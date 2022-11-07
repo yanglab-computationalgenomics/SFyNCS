@@ -1,16 +1,17 @@
 #!/usr/bin/env perl
 
-# 2022-03-15
+# 2022-11-03
 
 # 1. Function
 # Add "chr" if chromosome is numeral
-# Change chrX/chrx to chr23 and chrY/chry to chr24
 # Change upstream/downstream position in STAR chimeirc file to breakpoint position
 # Format breakpoint strand: + means left or upstream of the breakpoint will be used in fusion, while - means right or downstream of breakpoint
 # For a discordant read, sort breakpoints by chromosome if breakpoints locate in different chromosomes
 # For a discordant read, sort breakpoints by breakpoint position if breakpoints locate in same chromosome
 
-# to do: delete $junc_type=1 if $junc_type!=-1;
+# to do in next version:
+# maybe to do in next version: delete $junc_type=1 if $junc_type!=-1;
+# maybe change chrX/chrx to chr23 and chrY/chry to chr24
 
 # 2. Input from chimeric file (taking from star document):
 # Every line contains one chimerically aligned read, e.g.:
@@ -32,15 +33,15 @@
 # column 14: CIGAR of the second segment
 
 # 3. Output
-# column 1: chromosome of the left segment
-# column 2: left segment breakpoint (1-based)
-# column 3: strand of the left segment (different from input strand, + means left of the site will be used, while - means right of site will be used)
-# column 4: CIGAR of left segment
-# column 5: chromosome of right segment
-# column 6: right segment breakpoint (1-based)
-# column 7: strand of the right segment (different from input strand, + means left of the site will be used, while - means right of site will be used)
-# column 8: CIGAR of right segment
-# column 9: junction type: -1=encompassing junction (between the mates), 1=GT/AG, 2=CT/AC, 0=any other motif
+# column 1: chromosome of breakpoint 1
+# column 2: breakpoint 1 position (1-based)
+# column 3: breakpoint 1 strand (different from input strand, + means left of the site will be used, while - means right of site will be used)
+# column 4: CIGAR of breakpoint 1
+# column 5: chromosome of breakpoint 2
+# column 6: breakpoint 2 position (1-based)
+# column 7: breakpoint 2 strand (different from input strand, + means left of the site will be used, while - means right of site will be used)
+# column 8: CIGAR of breakpoint 2
+# column 9: junction type: -1=encompassing junction (between the mates), 1=split reads
 # column 10: read name
 
 
@@ -59,29 +60,29 @@ usage () if defined $help;
 $ARGV[0]='-' unless defined $ARGV[0];
 open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
 
-say join "\t", ("Chr_left", "Pos_left", "Strand_left", "CIGAR_left", "Chr_right", "Pos_right", "Strand_right", "CIGAR_righ", "Junction_type", "Read_name");
+say join "\t", ("Chr_breakpoint_1", "Pos_breakpoint_1", "Strand_breakpoint_1", "CIGAR_breakpoint_1", "Chr_breakpoint_2", "Pos_breakpoint_2", "Strand_breakpoint_2", "CIGAR_breakpoint_2", "Junction_type", "Read_name");
 # input didn't have header
 while(<IN>){
     chomp;
     next if $_=~/^#/;
     my ($chr_d, $rst_d, $strand_d, $chr_a, $rst_a, $strand_a, $junc_type, $rep_len_d, $rep_len_a, $read_name, $align_d, $cigar_d, $align_a, $cigar_a)=split "\t",$_;
-    #$chr_a="chr".$chr_a if $chr_a!~/^chr/;
-    #$chr_a=~s/Chr/chr/;
+    $chr_a="chr".$chr_a if $chr_a!~/^chr/;
+    $chr_a=~s/Chr/chr/;
     #$chr_a=~s/chrX/chr23/;
     #$chr_a=~s/chrx/chr23/;
     #$chr_a=~s/chrY/chr24/;
     #$chr_a=~s/chry/chr24/;
-    #$chr_d="chr".$chr_d if $chr_d!~/^chr/;
-    #$chr_d=~s/Chr/chr/;
+    $chr_d="chr".$chr_d if $chr_d!~/^chr/;
+    $chr_d=~s/Chr/chr/;
     #$chr_d=~s/chrX/chr23/;
     #$chr_d=~s/chrx/chr23/;
     #$chr_d=~s/chrY/chr24/;
     #$chr_d=~s/chry/chr24/;
     
-    # need to delete
+    # maybe delete in next version
     $junc_type=1 if $junc_type!=-1;
     
-    # change upstream/downstream site do breakpoint
+    # change upstream/downstream site to breakpoint
     $rst_d = ($strand_d eq '+') ? --$rst_d : ++$rst_d; 
     $rst_a = ($strand_a  eq '+') ? ++$rst_a : --$rst_a;
     
@@ -90,13 +91,13 @@ while(<IN>){
     $strand_a = ($strand_a eq '+') ? "-" : "+";
     
     # order breakpoint
-    my ($chr_left, $pos_left, $strand_left, $cigar_left, $chr_right, $pos_right, $strand_right, $cigar_right)=($chr_d, $rst_d, $strand_d, $cigar_d, $chr_a, $rst_a, $strand_a, $cigar_a);
+    my ($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $cigar_breakpoint_1, $chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $cigar_breakpoint_2)=($chr_d, $rst_d, $strand_d, $cigar_d, $chr_a, $rst_a, $strand_a, $cigar_a);
     if($chr_d eq $chr_a){
-	($chr_left, $pos_left, $strand_left, $cigar_left, $chr_right, $pos_right, $strand_right, $cigar_right)=($chr_a, $rst_a, $strand_a, $cigar_a, $chr_d, $rst_d, $strand_d, $cigar_d) if $rst_a < $rst_d;
+								($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $cigar_breakpoint_1, $chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $cigar_breakpoint_2)=($chr_a, $rst_a, $strand_a, $cigar_a, $chr_d, $rst_d, $strand_d, $cigar_d) if $rst_a < $rst_d;
     }else{
-	($chr_left, $pos_left, $strand_left, $cigar_left, $chr_right, $pos_right, $strand_right, $cigar_right)=($chr_a, $rst_a, $strand_a, $cigar_a, $chr_d, $rst_d, $strand_d, $cigar_d) if substr($chr_a, 3) < substr($chr_d, 3);
+								($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $cigar_breakpoint_1, $chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $cigar_breakpoint_2)=($chr_a, $rst_a, $strand_a, $cigar_a, $chr_d, $rst_d, $strand_d, $cigar_d) if substr($chr_a, 3) < substr($chr_d, 3);
     }
-    say join "\t", ($chr_left, $pos_left, $strand_left, $cigar_left, $chr_right, $pos_right, $strand_right, $cigar_right, $junc_type, $read_name);
+    say join "\t", ($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $cigar_breakpoint_1, $chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $cigar_breakpoint_2, $junc_type, $read_name);
 }
 close(IN);
 
@@ -106,7 +107,7 @@ print <<HELP;
 This script was used to format STAR chimeric input
 Usage: perl $scriptName Chimeric.out.junction >output
 
-    -h	--help				print this help information screen
+    -h	--help	Print this help information screen
 
 HELP
     exit(-1);

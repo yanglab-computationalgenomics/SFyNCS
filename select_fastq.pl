@@ -1,14 +1,15 @@
 #!/usr/bin/env perl
 
-# 2022-03-15
+# 2022-11-03
 
 # 1. Function
 # Select potential candidates' fastq
 # 1.1. will delete strings after space if read name contain space
+#  Strings after space will be deleted in STAR, use this parameter to get discordant reads
 
 # 2. Input
 # 2.1. potential candiates' read name
-# 2.2. fastq
+# 2.2. fastq file
 
 # 3. Output
 # Potential candidates' fastq
@@ -76,7 +77,7 @@ while(<IN>){
     chomp(my $name_2=<IN>);
     chomp(my $qual=<IN>);
     if(exists $hash{$name2}){
-	say STDERR $name3;
+								say STDERR $name3;
         say STDERR $seq;
         say STDERR '+';
         say STDERR $qual;
@@ -90,9 +91,9 @@ sub usage{
 print <<HELP;
 Usage: perl $scriptName reads_name.tsv 1.fastq|1.fastq.gz 2.fastq|2.fastq.gz >output_1.fastq 2>output_2.fastq
 Options:
-
-    -h --help		print this help information
-    -s --have_space 	read name have space. String after space will be deleted in STAR, use this parameter to get discordant reads
+ 
+    -s --have_space 	Read name have space. It can be set even there is no space in read name.
+    -h --help								Print this help information
 HELP
     exit(-1);
 }

@@ -1,97 +1,98 @@
 #!/usr/bin/env perl
 
-# 2022-04-12
+# 2022-11-04
 
 # 1. Function
 # Get totoal discordant reads, total clusters, (discordant reads)% in each cluster, (discordant reads)% in fusion cluster, (discordant reads)% support ratio within --flanking_length bp
-# Select the minimum sum distance pair as minimum blat distance
-# Change chr23 to chrX, and chr24 to chrY
 # Drop cluster id
 
+# to do in next version:
+# Change chr23 to chrX, and chr24 to chrY
+
 # 2. Input 
-# column 1: chromosome of the left segment
-# column 2: left segment site
-# column 3: strand of the left segment
-# column 4: chromosome of right segment
-# column 5: right segment site
-# column 6: strand of the right segment
+# column 1: chromosome of breakpoint 1
+# column 2: breakpoint 1 position (1-based)
+# column 3: breakpoint 1 strand 
+# column 4: chromosome of breakpoint 2
+# column 5: breakpoint 2 position (1-based)
+# column 6: breakpoint 2 strand
 # column 7: cluster id
-# column 8: split read count (star)
-# column 9: read pair count (star)
-# column 10: split read count (processed by tophat)
-# column 11: potential split read count (processed by tophat)
-# column 12: read pair count (processed by tophat)
-# column 13: split read count (blat tophat split reads and tophat potential split reads)
-# column 14: split read count (blat tophat split reads)
-# column 15: minimum distance of read pair to left breakpoint 
-# column 16: minimum distance of read pair to right breakpoint 
-# column 17: identity
-# column 18: minimum blat distace of left breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 19: minimum blat distace of right breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 20: minimum blat distace of left breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 21: minimum blat distace of right breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 22: is canonical split site
-# column 23: split reads (star)
-# column 24: read pairs (star)
-# column 25: split reads (processed by tophat)
-# column 26: potential split reads (processed by tophat)
-# column 27: read pairs (processed by tophat)
-# column 28: split reads (blat tophat split read and tophat potential split read)
-# column 29: distance of read pair to left breakpoint
-# column 30: distance of read pair to right breakpoint
-# column 31: distace of split read to left breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 32: distace of split read to right breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 33: distace of split read to left breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 34: distace of split read to right breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 35: alignment of left segment
-# column 36: alignment of right segment
+# column 8: split read count reported by STAR (e.g., 1)
+# column 9: read pair count reported by STAR (e.g., 4)
+# column 10: split read count supported by TopHat (e.g., 1)
+# column 11: potential split read count not supported by TopHat (e.g., 0)
+# column 12: read pair count reported by TopHat
+# column 13: split read count supported by Blat (e.g., 1)
+# column 14: split read count supported by Blat (considering split read supported by TopHat only, e.g., 1)
+# column 15: minimal distance between read pair and breakpoint 1 after aligning by TopHat (e.g., 13)
+# column 16: minimal distance between read pair and breakpoint 2 after aligning by TopHat (e.g., 22)
+# column 17: sequence identity (e.g., 0.52)
+# column 18: minimal distance between split read and breakpoint 1 after aligning by Blat (e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 19: minimal distance between split read and breakpoint 2 after aligning by Blat (e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 20: minimal distance between split read and breakpoint 1 after aligning by Blat (considering split read supported by TopHat only, e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 21: minimal distance between split read and breakpoint 2 after aligning by Blat (considering split read supported by TopHat only, e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 22: presence of canonical splice site
+# column 23: split reads reported by STAR (e.g., read_23)
+# column 24: read pairs reported by STAR (e.g., read_38,read_62,read_70,read_8)
+# column 25: split reads supported by TopHat (e.g., read_23)
+# column 26: potential split reads not supported by TopHat (e.g., NA)
+# column 27: read pairs supported by TopHat (e.g., read_38,read_70,read_8)
+# column 28: split reads supported by Blat(blat tophat split read and tophat potential split read)
+# column 29: distance between each read pair and breakpoint 1 after aligning by TopHat (e.g., 740,23,13)
+# column 30: distance between each read pair and breakpoint 2 after aligning by TopHat (e.g., 292,2592,22)
+# column 31: distance between each split read and breakpoint 1 after aligning to artifact reference by Blat (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 32: distance between each split read and breakpoint 2 after aligning to artifact reference by Blat (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 33: distance between each split read and breakpoint 1 after aligning to artifact reference by Blat (considering split read supported by TopHat only, use mean if both read 1 and read 2 are split read)
+# column 34: distance between each split read and breakpoint 2 after aligning to artifact reference by Blat (considering split read supported by TopHat only, use mean if both read 1 and read 2 are split read)
+# column 35: Needleman-Wunsch alignment of sequence used to calculate sequence identity in breakpoint 1 (e.g., --AGTGGGCCAGGTAG-GGCTGG)
+# column 36: Needleman-Wunsch alignment of sequence used to calculate sequence identity in breakpoint 2 (e.g., CCACT--GCCAGG-AGAACCTCA)
 
 # 3. Output
-# column 1: chromosome of the left segment
-# column 2: left segment site
-# column 3: strand of the left segment
-# column 4: chromosome of right segment
-# column 5: right segment site
-# column 6: strand of the right segment
-# column 7: split read count (star)
-# column 8: read pair count (star)
-# column 9: split read count (processed by tophat)
-# column 10: potential split read count (processed by tophat)
-# column 11: read pair count (processed by tophat)
-# column 12: split read count (blat tophat split reads and tophat potential split reads)
-# column 13: split read count (blat tophat split reads)
-# column 14: minimum distance of read pair to left breakpoint 
-# column 15: minimum distance of read pair to right breakpoint 
-# column 16: identity
-# column 17: minimum blat distace of left breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 18: minimum blat distace of right breakpoint (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 19: minimum blat distace of left breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 20: minimum blat distace of right breakpoint (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 21: is canonical split site
-# column 22: total clusters in cluster (left)
-# column 23: total clusters in cluster (right)
-# column 24: total clusters in cluster (merge)
-# column 25: (discordant read)% support fusion
-# column 26: sd of (discordant read)% in each of cluster (left)
-# column 27: sd of (discordant read)% in each of cluster (right)
-# column 28: split reads (star)
-# column 29: read pairs (star)
-# column 30: split reads (processed by tophat)
-# column 31: potential split reads (processed by tophat)
-# column 32: read pairs (processed by tophat)
-# column 33: split reads (blat tophat split read and tophat potential split read)
-# column 34: distance of read pair to left breakpoint
-# column 35: distance of read pair to right breakpoint
-# column 36: distace of split read to left breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 37: distace of split read to right breakpoint when blating to artifact reference (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
-# column 38: distace of split read to left breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 39: distace of split read to right breakpoint when blating to artifact reference (blat tophat split read, use mean if both read 1 and read 2 are split read)
-# column 40: alignment of left segment
-# column 41: alignment of right segment
-# column 42: overlapped cluster ids (left)
-# column 43: overlapped cluster ids (right)
-# column 44: total reads in each cluster (left)
-# column 45: total reads in each cluster (right)
+# column 1: chromosome of breakpoint 1
+# column 2: breakpoint 1 position (1-based)
+# column 3: breakpoint 1 strand 
+# column 4: chromosome of breakpoint 2
+# column 5: breakpoint 2 position (1-based)
+# column 6: breakpoint 2 strand
+# column 7: split read count reported by STAR (e.g., 1)
+# column 8: read pair count reported by STAR (e.g., 4)
+# column 9: split read count supported by TopHat (e.g., 1)
+# column 10: potential split read count not supported by TopHat (e.g., 0)
+# column 11: read pair count reported by TopHat
+# column 12: split read count supported by Blat (e.g., 1)
+# column 13: split read count supported by Blat (considering split read supported by TopHat only, e.g., 1)
+# column 14: minimal distance between read pair and breakpoint 1 after aligning by TopHat (e.g., 13)
+# column 15: minimal distance between read pair and breakpoint 2 after aligning by TopHat (e.g., 22)
+# column 16: sequence identity (e.g., 0.52)
+# column 17: minimal distance between split read and breakpoint 1 after aligning by Blat (e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 18: minimal distance between split read and breakpoint 2 after aligning by Blat (e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 19: minimal distance between split read and breakpoint 1 after aligning by Blat (considering split read supported by TopHat only, e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 20: minimal distance between split read and breakpoint 2 after aligning by Blat (considering split read supported by TopHat only, e.g., 0, use mean if both read 1 and read 2 are split read)
+# column 21: presence of canonical splice site
+# column 22: cluster count around breakpoint 1 (e.g., 1)
+# column 23: cluster count around breakpoint 2 (e.g., 1)
+# column 24: cluster count around breakpoint 1 and breakpoint 2 (e.g., 1)
+# column 25: percentage of split reads and read pairs supported fusion transcript’s cluster around breakpoint 1 and breakpoint 2 (e.g., 0.75)
+# column 26: standard deviation for candidate fusion clusters around breakpoint 1 (e.g., NA, NA for only one cluster)
+# column 27: standard deviation for candidate fusion clusters around breakpoint 2 (e.g., NA, NA for only one cluster)
+# column 28: split reads reported by STAR (e.g., read_23)
+# column 29: read pairs reported by STAR (e.g., read_38,read_62,read_70,read_8)
+# column 30: split reads supported by TopHat (e.g., read_23)
+# column 31: potential split reads not supported by TopHat (e.g., NA)
+# column 32: read pairs supported by TopHat (e.g., read_38,read_70,read_8)
+# column 33: split reads supported by Blat(blat tophat split read and tophat potential split read)
+# column 34: distance between each read pair and breakpoint 1 after aligning by TopHat (e.g., 740,23,13)
+# column 35: distance between each read pair and breakpoint 2 after aligning by TopHat (e.g., 292,2592,22)
+# column 36: distance between each split read and breakpoint 1 after aligning to artifact reference by Blat (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 37: distance between each split read and breakpoint 2 after aligning to artifact reference by Blat (blat align tophat split read and tophat potential split read, use mean if both read 1 and read 2 are split read)
+# column 38: distance between each split read and breakpoint 1 after aligning to artifact reference by Blat (considering split read supported by TopHat only, use mean if both read 1 and read 2 are split read)
+# column 39: distance between each split read and breakpoint 2 after aligning to artifact reference by Blat (considering split read supported by TopHat only, use mean if both read 1 and read 2 are split read)
+# column 40: Needleman-Wunsch alignment of sequence used to calculate sequence identity in breakpoint 1 (e.g., --AGTGGGCCAGGTAG-GGCTGG)
+# column 41: Needleman-Wunsch alignment of sequence used to calculate sequence identity in breakpoint 2 (e.g., CCACT--GCCAGG-AGAACCTCA)
+# column 42: discordant read cluster IDs around breakpoint 1 (e.g., 1)
+# column 43: discordant read cluster IDs around breakpoint 2 (e.g., 1)
+# column 44: supporting reads count in each cluster around breakpoint 1 (e.g., 4)
+# column 45: supporting reads count in each cluster around breakpoint 2 (e.g., 3)
 
 
 use strict;
@@ -101,9 +102,12 @@ use File::Basename;
 use lib dirname $0;
 
 my $flanking_length=100;
+my $sd_cutoff=0.1;
+
 
 GetOptions(
-    'f|flanking_length=i'  => \$flanking_length,
+    'f|flanking_length=i'   => \$flanking_length,
+    's|sd_cutoff=f'         => \$sd_cutoff,
     'h|help'    => sub{usage()}
 )||usage();
 
@@ -128,50 +132,56 @@ while(<IN>){
 }
 close(IN);
 
-say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right", "Strand_right",
-    "Split_read_count_(star)", "Read_pair_count_(star)", "Split_read_count_(tophat)", "Potential_split_read_count_(tophat)", "Read_pair_count_(tophat)", "Split_read_count_(blat_tophat_split_and_tophat_potential_split_reads)", "Split_read_count_(blat_tophat_split_reads)",
-    "Minimum_read_pair_distance_to_left", "Minimum_read_pair_distance_to_right",
-    "Identity", "Minimum_blat_distance_to_left_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_right_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_left_(tophat_split_reads)", "Minimum_blat_distance_to_right_(tophat_split_reads)",
-    "Is_canonical_motif",
-    "Total_clusters_(left)", "Total_clusters_(right)", "Total_clusters_(merge)",
+say join "\t", ("Chr_breakpoint_1", "Pos_breakpoint_1", "Strand_breakpoint_1", "Chr_breakpoint_2", "Pos_breakpoint_2", "Strand_breakpoint_2",
+    "Split_read_count_(star)", "Read_pair_count_(star)", "Split_read_count_(tophat)", "Potential_split_read_count_(tophat)", "Read_pair_count_(tophat)",
+    "Split_read_count_(blat_tophat_split_and_tophat_potential_split_reads)", "Split_read_count_(blat_tophat_split_reads)",
+    "Minimum_read_pair_distance_to_breakpoint_1", "Minimum_read_pair_distance_to_breakpoint_2",
+    "Sequence_identity",
+    "Minimum_blat_distance_to_breakpoint_1_(tophat_split_and_potential_split_reads)", "Minimum_blat_distance_to_breakpoint_2_(tophat_split_and_potential_split_reads)",
+    "Minimum_blat_distance_to_breakpoint_1_(tophat_split_reads)", "Minimum_blat_distance_to_breakpoint_2_(tophat_split_reads)",
+    "Have_canonical_motif",
+    "Cluster_count_breakpoint_1", "Cluster_count_breakpoint_2", "Cluster_count_breakpoint_1_and_2",
     "(discordant_reads)%_support_fusion",
-    "SD_(discordant_reads)%_in_clusters_(left)", "SD_(discordant_reads)%_in_clusters_(right)",
-    "Split_reads_(star)", "Read_pairs_(star)", "Split_reads_(tophat)", "Potential_split_reads_(tophat)", "Read_pairs_(tophat)", "Split_reads_(blat_tophat_split_and_tophat_potential_split_reads)",
-    "Read_pair_distance_to_left", "Read_pair_distance_to_right",
-    "Blat_distance_to_left_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_right_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_left_(tophat_split_reads)", "Blat_distance_to_right_(tophat_split_eads)",
-    "Identity_align_left", "Identity_align_right",
-    "Cluster_ids_left", "Cluster_ids_right",
-    "Total_reads_in_each_cluster_left", "Total_reads_in_each_cluster_right");
+    "SD_(discordant_reads)%_in_breakpoint_1", "SD_(discordant_reads)%_in_breakpoint_2",
+    "Split_reads_(star)", "Read_pairs_(star)",
+    "Split_reads_(tophat)", "Potential_split_reads_(tophat)", "Read_pairs_(tophat)",
+    "Split_reads_(blat_tophat_split_and_tophat_potential_split_reads)",
+    "Read_pair_distance_to_breakpoint_1", "Read_pair_distance_to_breakpoint_2",
+    "Blat_distance_to_breakpoint_1_(tophat_split_and_tophat_potential_split_reads)", "Blat_distance_to_breakpoint_2_(tophat_split_and_tophat_potential_split_reads)",
+    "Blat_distance_to_breakpoint_1_(tophat_split_reads)", "Blat_distance_to_breakpoint_2_(tophat_split_eads)",
+    "Sequence_identity_alignment_breakpoint_1", "Sequence_identity_alignment_breakpoint_2",
+    "Cluster_ids_breakpoint_1", "Cluster_ids_breakpoint_2",
+    "Read_count_in_each_cluster_breakpoint_1", "Read_count_in_each_cluster_breakpoint_2");
 
 open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
 # input have header
 <IN>;
 while(<IN>){
     chomp;
-    my ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right, $cluster_id,
+    my ($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $cluster_id,
         $split_read_count_star, $read_pair_count_star, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat, $split_read_count_blat, $split_read_count_blat_base_on_tophat_split_read,
-        $min_read_pair_distance_left, $min_read_pair_distance_right, $identity_output,
-	$minimum_blat_distance_left, $minimum_blat_distance_right, $minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+        $min_read_pair_distance_breakpoint_1, $min_read_pair_distance_breakpoint_2, $identity_output,
+        $minimum_blat_distance_breakpoint_1, $minimum_blat_distance_breakpoint_2, $minimum_blat_distance_base_on_tophat_split_read_breakpoint_1, $minimum_blat_distance_base_on_tophat_split_read_breakpoint_2,
         $is_split_site_contain_canonical_motif,
-	$split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat, $split_reads_blat,
-        $read_pair_distance_to_left, $read_pair_distance_to_right, 
-	$blat_distance_left, $blat_distance_right, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
-	$identity_seq_left, $identity_seq_right)=split "\t", $_;
-    my ($total_clusters_left, $percentage_discordant_read_in_each_cluster_left, $all_discordant_reads_left, $clusters_left, $cluster_ids_left, $total_reads_in_each_cluster_left)=&get_cluster_and_discordant_statistics($chr_left, $pos_left, $strand_left, $cluster_id);
-    my ($total_clusters_right, $percentage_discordant_read_in_each_cluster_right, $all_discordant_reads_right, $clusters_right, $cluster_ids_right, $total_reads_in_each_cluster_right)=&get_cluster_and_discordant_statistics($chr_right, $pos_right, $strand_right, $cluster_id);
+        $split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat, $split_reads_blat,
+        $read_pair_distance_to_breakpoint_1, $read_pair_distance_to_breakpoint_2, 
+        $blat_distance_breakpoint_1, $blat_distance_breakpoint_2, $blat_distance_base_on_tophat_split_read_breakpoint_1, $blat_distance_base_on_tophat_split_read_breakpoint_2,
+        $identity_seq_breakpoint_1, $identity_seq_breakpoint_2)=split "\t", $_;
+    my ($total_clusters_breakpoint_1, $percentage_discordant_read_in_each_cluster_breakpoint_1, $all_discordant_reads_breakpoint_1, $clusters_breakpoint_1, $cluster_ids_breakpoint_1, $total_reads_in_each_cluster_breakpoint_1)=&get_cluster_and_discordant_statistics($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $cluster_id);
+    my ($total_clusters_breakpoint_2, $percentage_discordant_read_in_each_cluster_breakpoint_2, $all_discordant_reads_breakpoint_2, $clusters_breakpoint_2, $cluster_ids_breakpoint_2, $total_reads_in_each_cluster_breakpoint_2)=&get_cluster_and_discordant_statistics($chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $cluster_id);
     
-    my $key_left=join ":", ($chr_left, $pos_left, $strand_left);
-    my $key_right=join ":", ($chr_right, $pos_right, $strand_right);
+    my $key_breakpoint_1=join ":", ($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1);
+    my $key_breakpoint_2=join ":", ($chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2);
     my %processed_reads;
     my ($total_discordant_reads, $fusion_supported_reads)=(0) x 2;
-    foreach my $read (split ",", $all_discordant_reads_left){
+    foreach my $read (split ",", $all_discordant_reads_breakpoint_1){
         next if exists $processed_reads{$read};
         $processed_reads{$read}=0;
         $total_discordant_reads++;
-        $fusion_supported_reads++ if (exists $overlapped_discordant_reads{$key_left}{"split_reads"}{$read} && exists $overlapped_discordant_reads{$key_right}{"split_reads"}{$read}) ||
-            (exists $overlapped_discordant_reads{$key_left}{"read_pairs"}{$read} && exists $overlapped_discordant_reads{$key_right}{"read_pairs"}{$read});
+        $fusion_supported_reads++ if (exists $overlapped_discordant_reads{$key_breakpoint_1}{"split_reads"}{$read} && exists $overlapped_discordant_reads{$key_breakpoint_2}{"split_reads"}{$read}) ||
+            (exists $overlapped_discordant_reads{$key_breakpoint_1}{"read_pairs"}{$read} && exists $overlapped_discordant_reads{$key_breakpoint_2}{"read_pairs"}{$read});
     }
-    foreach my $read (split ",", $all_discordant_reads_right){
+    foreach my $read (split ",", $all_discordant_reads_breakpoint_2){
         next if exists $processed_reads{$read};
         $processed_reads{$read}=0;
         $total_discordant_reads++;
@@ -180,47 +190,50 @@ while(<IN>){
     
     my %prcessed_cluster_ids;
     my $total_clusters=0;
-    foreach my $cluster_id(split ",", $clusters_left){
+    foreach my $cluster_id(split ",", $clusters_breakpoint_1){
         next if exists $prcessed_cluster_ids{$cluster_id};
         $prcessed_cluster_ids{$cluster_id}=0;
         $total_clusters++;
     }
-    foreach my $cluster_id(split ",", $clusters_right){
+    foreach my $cluster_id(split ",", $clusters_breakpoint_2){
         next if exists $prcessed_cluster_ids{$cluster_id};
         $prcessed_cluster_ids{$cluster_id}=0;
         $total_clusters++;
     }
     
     # sd
-    my @Temp_array=split ",", $percentage_discordant_read_in_each_cluster_left;
-    my $sd_percentage_discorant_read_in_each_cluster_left="NA";
+    my @Temp_array=split ",", $percentage_discordant_read_in_each_cluster_breakpoint_1;
+    my $sd_percentage_discorant_read_in_each_cluster_breakpoint_1="NA";
     if(@Temp_array>1){
-        $sd_percentage_discorant_read_in_each_cluster_left=&get_sd(\@Temp_array);
+        $sd_percentage_discorant_read_in_each_cluster_breakpoint_1=&get_sd(\@Temp_array);
     }
-    @Temp_array=split ",", $percentage_discordant_read_in_each_cluster_right;
-    my $sd_percentage_discorant_read_in_each_cluster_right="NA";
+    @Temp_array=split ",", $percentage_discordant_read_in_each_cluster_breakpoint_2;
+    my $sd_percentage_discorant_read_in_each_cluster_breakpoint_2="NA";
     if(@Temp_array>1){
-        $sd_percentage_discorant_read_in_each_cluster_right=&get_sd(\@Temp_array);
+        $sd_percentage_discorant_read_in_each_cluster_breakpoint_2=&get_sd(\@Temp_array);
     }
     
-    $chr_left=~s/chr23/chrX/;
-    $chr_left=~s/chr24/chrY/;
-    $chr_right=~s/chr23/chrX/;
-    $chr_right=~s/chr24/chrY/;
-    say join "\t", ($chr_left, $pos_left, $strand_left, $chr_right, $pos_right, $strand_right,
+    next if ($sd_percentage_discorant_read_in_each_cluster_breakpoint_1 ne "NA" && $sd_percentage_discorant_read_in_each_cluster_breakpoint_1 < $sd_cutoff) ||
+        ($sd_percentage_discorant_read_in_each_cluster_breakpoint_2 ne "NA" && $sd_percentage_discorant_read_in_each_cluster_breakpoint_2 < $sd_cutoff);
+    
+    #$chr_breakpoint_1=~s/chr23/chrX/;
+    #$chr_breakpoint_1=~s/chr24/chrY/;
+    #$chr_breakpoint_2=~s/chr23/chrX/;
+    #$chr_breakpoint_2=~s/chr24/chrY/;
+    say join "\t", ($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2,
         $split_read_count_star, $read_pair_count_star, $split_read_count_tophat, $potential_split_read_count_tophat, $read_pair_count_tophat, $split_read_count_blat, $split_read_count_blat_base_on_tophat_split_read,
-        $min_read_pair_distance_left, $min_read_pair_distance_right, $identity_output,
-	$minimum_blat_distance_left, $minimum_blat_distance_right, $minimum_blat_distance_base_on_tophat_split_read_left, $minimum_blat_distance_base_on_tophat_split_read_right,
+        $min_read_pair_distance_breakpoint_1, $min_read_pair_distance_breakpoint_2, $identity_output,
+        $minimum_blat_distance_breakpoint_1, $minimum_blat_distance_breakpoint_2, $minimum_blat_distance_base_on_tophat_split_read_breakpoint_1, $minimum_blat_distance_base_on_tophat_split_read_breakpoint_2,
         $is_split_site_contain_canonical_motif,
-	$total_clusters_left, $total_clusters_right, $total_clusters,
+        $total_clusters_breakpoint_1, $total_clusters_breakpoint_2, $total_clusters,
         $percentage_support_fusion,
-        $sd_percentage_discorant_read_in_each_cluster_left, $sd_percentage_discorant_read_in_each_cluster_right,
+        $sd_percentage_discorant_read_in_each_cluster_breakpoint_1, $sd_percentage_discorant_read_in_each_cluster_breakpoint_2,
         $split_reads_star, $read_pairs_star, $split_reads_tophat, $potential_split_reads_tophat, $read_pairs_tophat, $split_reads_blat,
-        $read_pair_distance_to_left, $read_pair_distance_to_right, 
-	$blat_distance_left, $blat_distance_right, $blat_distance_base_on_tophat_split_read_left, $blat_distance_base_on_tophat_split_read_right,
-	$identity_seq_left, $identity_seq_right,
-        $cluster_ids_left, $cluster_ids_right,
-        $total_reads_in_each_cluster_left, $total_reads_in_each_cluster_right);
+        $read_pair_distance_to_breakpoint_1, $read_pair_distance_to_breakpoint_2, 
+        $blat_distance_breakpoint_1, $blat_distance_breakpoint_2, $blat_distance_base_on_tophat_split_read_breakpoint_1, $blat_distance_base_on_tophat_split_read_breakpoint_2,
+        $identity_seq_breakpoint_1, $identity_seq_breakpoint_2,
+        $cluster_ids_breakpoint_1, $cluster_ids_breakpoint_2,
+        $total_reads_in_each_cluster_breakpoint_1, $total_reads_in_each_cluster_breakpoint_2);
 }
 close(IN);
 
@@ -293,8 +306,9 @@ This script was used to get cluster statistics in the breakpoint
 Usage: perl $scriptName processed_with_blat.tsv >output
 Options:
 
-    -f --flanking_length    calculate cluster statitics within this distance [default: $flanking_length]
-    -h --help     	    print this help information
+    -f --flanking_length    INT     Breakpoint flanking size to calculate standard deviation [default: $flanking_length]
+    -s --sd_cutoff          FLOAT   Standard deviation cutoff to filter fusions  [default: $sd_cutoff]
+    -h --help     	                 Print this help information
 HELP
     exit(-1);
 }
