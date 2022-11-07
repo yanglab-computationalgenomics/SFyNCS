@@ -135,16 +135,15 @@ mkdir -p tophat_index
 bowtie2-build toy_reference_genome_sequence.fasta tophat_index/tophat
 ln -s $PWD/toy_reference_genome_sequence.fasta $PWD/tophat_index/tophat.fa
 ```
-5. Run SFyNCS.  
+5. Run SFyNCS. Users should get fusions.tsv.gz and fusions_abridged.tsv.gz under demo_output, please make sure the content in these two output files is the same as the files under example.  
   5.1. Start from fastq.gz files.
   ```
   bash ../run_SFyNCS.sh -p 1 -o demo_output -a toy_gene_annotation.gpe -g toy_reference_genome_sequence.fasta -s star_index -t tophat_index/tophat -d toy_normal_directory  toy_pair_end_reads_1.fastq.gz toy_pair_end_reads_2.fastq.gz
-  ```
+  ```  
    5.2.  Start from Chimeric.out.junction produced by STAR and fastq.gz files.
   ```
   bash ../run_SFyNCS.sh -p 1 -c Chimeric.out.junction -o demo_output -a toy_gene_annotation.gpe -g toy_reference_genome_sequence.fasta -t tophat_index/tophat -d toy_normal_directory toy_pair_end_reads_1.fastq.gz toy_pair_end_reads_2.fastq.gz
   ```
-Users should get fusions.tsv.gz and fusions_abridged.tsv.gz under demo_output, please make sure the content in these two output files is the same as the files under example.
   
 
 #### Installation
