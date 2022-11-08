@@ -146,17 +146,27 @@ ln -s $PWD/toy_reference_genome_sequence.fasta $PWD/tophat_index/tophat.fa
     ```
 
 ## IV. Workflow
-### 1. Running SFyNCS  
+### 1. Installation  
+```
+wget https://github.com/yanglab-computationalgenomics/SFyNCS/archive/refs/heads/main.zip
+tar -zxvf main.zip
+```
+or
+```
+git clone https://github.com/yanglab-computationalgenomics/SFyNCS.git
+```
+
+### 2. Running SFyNCS  
 SFyNCS can be run by the following commands. Users can further provide "-p thread_numbers" to speed up the steps of STAR and Tophat.
-- 1.1. Start from fastq.gz files.
+- 2.1. Start from fastq.gz files.
   ```
   /path/to/run_SFyNCS.sh -o /path_to/output_dir -a /path_to/gene_annotation.gpe -g /path_to/genome.fasta -s /path_to/star_index_dir -t /path_to/tophat_index_dir/file_prefix -d /path/to/normal_junction_directory 1.fastq.gz 2.fastq.gz
   ```
-- 1.2. Start from Chimeric.out.junction produced by STAR and fastq.gz files.
+- 2.2. Start from Chimeric.out.junction produced by STAR and fastq.gz files.
   ```
   /path/to/run_SFyNCS.sh -c /path_to/Chimeric.out.junction -o /path_to/output_dir -a /path_to/gene_annotation.gpe -g /path_to/genome.fasta -t /path_to/tophat_index_dir/file_prefix -d /path/to/normal_junction_directory 1.fastq.gz 2.fastq.gz
   ```
- - 1.3. run_SFyNCS.sh options. Note that the default parameters are optimized for TCGA data.
+ - 2.3. run_SFyNCS.sh options. Note that the default parameters are optimized for TCGA data.
    ```
    -a    --annotation_file                   STR      Gene annotation gpe file (section 2.5/II)  
    -g    --genome_fasta                      STR      Reference genome fasta file  
@@ -191,7 +201,7 @@ SFyNCS can be run by the following commands. Users can further provide "-p threa
          --min_distance_non_plus_minus       INT      Minimal distance allowed between breakpoints if located in the same chromosome and strand is not plus minus [default: 100000]
    ```
  
- ### 2. Output
+ ### 3. Output
  There are two output files named fusions.tsv.gz and fusions_abridged.tsv.gz. The second one contains subset columns of the first file and is much smaller. Here are the columns of fusions.tsv.gz.
  ```
 Column 1:   Chromosome of breakpoint 1 (e.g., chr1)
