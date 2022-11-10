@@ -566,9 +566,9 @@ sub compareSplitReadToBreakpoint{
     my ($pos_breakpoint, $strand_breakpoint, $start_read, $end_read)=@_;
     my $is_support_breakpoint=0;
     if($strand_breakpoint eq '+'){
-        $is_support_breakpoint=1 if ($end_read<=$pos_breakpoint+$overhang_length) && ($pos_breakpoint+$overhang_length-$end_read<=$window_size);
+        $is_support_breakpoint=1 if ($end_read<=$pos_breakpoint+$overhang_length) && ($pos_breakpoint-$end_read<=$window_size);
     }else{
-        $is_support_breakpoint=1 if ($start_read>=$pos_breakpoint-$overhang_length) && ($start_read-$pos_breakpoint+$overhang_length<=$window_size);
+        $is_support_breakpoint=1 if ($start_read>=$pos_breakpoint-$overhang_length) && ($start_read-$pos_breakpoint<=$window_size);
     }
     return $is_support_breakpoint;
 }
