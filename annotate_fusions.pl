@@ -613,36 +613,34 @@ while(<IN>){
     # whether in the same gene
     my $is_in_the_same_gene="N";
     if($input_chr_breakpoint_1 eq $input_chr_breakpoint_2){
-        my @Temp_gene_name_breakpoint_1=split "/", $gene_name_breakpoint_1;
-        my @Temp_gene_name_breakpoint_2=split "/", $gene_name_breakpoint_2;
-        my @Temp_gene_type_breakpoint_1=split "/", $gene_type_breakpoint_1;
-        my @Temp_gene_type_breakpoint_2=split "/", $gene_type_breakpoint_2;
-        my @Temp_gene_strand_breakpoint_1=split "/", $gene_strand_breakpoint_1;
-        my @Temp_gene_strand_breakpoint_2=split "/", $gene_strand_breakpoint_2;
-        my @Temp_pos_location_breakpoint_1=split "/", $fusion_pos_location_breakpoint_1;
-        my @Temp_pos_location_breakpoint_2=split "/", $fusion_pos_location_breakpoint_2;
-        my @Temp_pos_region_type_breakpoint_1=split "/", $fusion_pos_region_type_breakpoint_1;
-        my @Temp_pos_region_type_breakpoint_2=split "/", $fusion_pos_region_type_breakpoint_2;
-        my @Temp_extra_base_breakpoint_1=split "/", $fusion_extra_base_breakpoint_1;
-        my @Temp_extra_base_breakpoint_2=split "/", $fusion_extra_base_breakpoint_2;
+        my @Temp_gene_name_breakpoint_1=();
+        my @Temp_gene_name_breakpoint_2=();
+        my $temp_key=join ";", ($chr_breakpoint_1, $pos_breakpoint_1);
+        my @genes_info=sort keys %{$breakpoint2gene{$temp_key}};
+        my %temp_hash;
+        foreach my $gene_info (@genes_info){
+            my ($transcript_id, $transcript_chr, $transcript_strand, $transcript_start, $transcript_end, $cds_start, $cds_end, $exon_count, $exon_starts, $exon_ends, $score, $name_2, $cds_start_stat, $cds_end_stat, $exon_frames)=split "\t", $select_transcripts{$gene_info};
+            next if exists $temp_hash{$name_2};
+            push @Temp_gene_name_breakpoint_1, $name_2;
+            $temp_hash{$name_2}=0;   
+        }
+        $temp_key=join ";", ($chr_breakpoint_2, $pos_breakpoint_2);
+        @genes_info=sort keys %{$breakpoint2gene{$temp_key}};
+        %temp_hash=();
+        foreach my $gene_info (@genes_info){
+            my ($transcript_id, $transcript_chr, $transcript_strand, $transcript_start, $transcript_end, $cds_start, $cds_end, $exon_count, $exon_starts, $exon_ends, $score, $name_2, $cds_start_stat, $cds_end_stat, $exon_frames)=split "\t", $select_transcripts{$gene_info};
+            next if exists $temp_hash{$name_2};
+            push @Temp_gene_name_breakpoint_2, $name_2;
+            $temp_hash{$name_2}=0;   
+        }
         
-        for(my $i=0; $i<@Temp_gene_name_breakpoint_1; $i++){
-            my $gene_breakpoint_1=$Temp_gene_name_breakpoint_1[$i];
+        foreach my $gene_1 (@Temp_gene_name_breakpoint_1){
             last if $is_in_the_same_gene eq "Y";
-            next if $gene_breakpoint_1 eq "NA";
-            for(my $j=0; $j<@Temp_gene_name_breakpoint_1; $j++){
-                my $gene_breakpoint_2=$Temp_gene_name_breakpoint_2[$i];
-                last if $is_in_the_same_gene eq "Y";
-                next if $gene_breakpoint_2 eq "NA";
-                if($gene_breakpoint_1 eq $gene_breakpoint_2){
-                    if($input_strand_breakpoint_1 eq '+' && $input_strand_breakpoint_2 eq '-'){ # $input_strand_breakpoint_1 and $input_strand_breakpoint_2 were sort by number by default
-                        $is_in_the_same_gene="Y" ;
-                        ($gene_name_breakpoint_1, $gene_type_breakpoint_1, $gene_strand_breakpoint_1, $fusion_pos_location_breakpoint_1, $fusion_pos_region_type_breakpoint_1, $fusion_extra_base_breakpoint_1)=(
-                            $gene_breakpoint_1, $Temp_gene_type_breakpoint_1[$i], $Temp_gene_strand_breakpoint_1[$i], $Temp_pos_location_breakpoint_1[$i], $Temp_pos_region_type_breakpoint_1[$i], $Temp_extra_base_breakpoint_1[$i]);
-                        ($gene_name_breakpoint_2, $gene_type_breakpoint_2, $gene_strand_breakpoint_2, $fusion_pos_location_breakpoint_2, $fusion_pos_region_type_breakpoint_2, $fusion_extra_base_breakpoint_2)=(
-                            $gene_breakpoint_2, $Temp_gene_type_breakpoint_2[$i], $Temp_gene_strand_breakpoint_2[$i], $Temp_pos_location_breakpoint_2[$i], $Temp_pos_region_type_breakpoint_2[$i], $Temp_extra_base_breakpoint_2[$i]);
-                    }
+            foreach my $gene_2 (@Temp_gene_name_breakpoint_2){
+                if($gene_1 eq $gene_2){
+                    $is_in_the_same_gene="Y";
                 }
+                last if $is_in_the_same_gene eq "Y";
             }
         }
     }
