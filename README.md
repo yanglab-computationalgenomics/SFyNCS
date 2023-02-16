@@ -1,5 +1,5 @@
 ## I. About
-Somatic Fusions involving Non-Coding Sequences (SFyNCS) detects fusions involving both protein-coding genes and non-coding sequences from paired-end RNA-seq data. It uses discordant read pairs and split reads to detect the fusions and refine fusion breakpoints to the basepair resolution. Please refer to user manual for more detail.
+Somatic Fusions involving Non-Coding Sequences (SFyNCS) detects fusions involving both protein-coding genes and non-coding sequences from paired-end RNA-seq data. It uses discordant read pairs and split reads to detect the fusions and refine fusion breakpoints to the basepair resolution. Please refer to [user manual](https://github.com/yanglab-computationalgenomics/SFyNCS/blob/main/user_manual.docx) for more detail.
 
 ## II. Prerequisites
 ### 1. Software environment
