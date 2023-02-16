@@ -6,8 +6,8 @@ Version 0.14
 II. Prerequisites
 1. Software environment
 - Unix/Linux system
-- Python2 (tested v2.7.5, v2.7.11), it can be downloaded at https://www.python.org/downloads or installed with conda (https://anaconda.org/bioconda/python, please specify version when installing).
 - Perl (v5.010 or above), it can be downloaded at https://www.perl.org/get.html or installed with conda (https://anaconda.org/conda-forge/perl).
+- Python2 (tested v2.7.5, v2.7.11), it can be downloaded at https://www.python.org/downloads or installed with conda (https://anaconda.org/bioconda/python, please specify version when installing).
 - Blat (tested v35, v36), it can be downloaded at http://hgdownload.soe.ucsc.edu/admin/exe or installed with conda (https://anaconda.org/bioconda/blat).
 - Bedtools (tested v2.25.0, v2.26.0, v2.27.1), it can be downloaded at https://github.com/arq5x/bedtools2/releases or installed with conda (https://anaconda.org/bioconda/blat).
 - Bowtie2 (tested v2.1.0, v2.2.5, v2.2.9, v2.3.0, v2.3.2, v2.3.4.3), it can be downloaded at https://sourceforge.net/projects/bowtie-bio/files/bowtie2/ or installed with conda (https://anaconda.org/bioconda/bowtie2).
@@ -22,8 +22,8 @@ II. Prerequisites
 - It takes 14 minutes to install all below packages using conda:
   conda create --no-default-packages -n SFyNCS
   source activate SFyNCS
-  conda install -c anaconda python=2.7.11
   conda install -c conda-forge perl=5.26.2
+  conda install -c anaconda python=2.7.11
   conda install -c bioconda blat=36
   conda install -c bioconda bedtools=2.27.1
   conda install -c bioconda bowtie2=2.3.4.3
