@@ -128,11 +128,9 @@ Follow these steps to install TopHat2:
 
 ## III. Example
 Note: all files under the example directory are for testing only.
-1. Download and decompress SFyNCS.
+1. Download SFyNCS.
 ```
-wget https://github.com/yanglab-computationalgenomics/SFyNCS/
-mv master.zip SFyNCS.zip
-unzip SFyNCS.zip
+git clone https://github.com/yanglab-computationalgenomics/SFyNCS.git
 ```
 2. Decompress example.tar.gz and enter example directory.
 ```
