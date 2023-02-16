@@ -83,8 +83,8 @@ STAR --genomeDir /path_to/star_index_dir  \
   
 III. Example
 Note: all files under the example directory are for testing only.
-1. Decompress SFyNCS: 
-  tar -zxvf SFyNCS.tar.gz
+1. Download SFyNCS: 
+  git clone https://github.com/yanglab-computationalgenomics/SFyNCS.git
 2. Decompress example.tar.gz and enter example directory: 
   cd SFyNCS
   tar -zxvf example.tar.gz
