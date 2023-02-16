@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# 2022-11-03
+# 2023-02-14
 
 # 1. Function
 # Identify fusion candidates from clustered reads 
@@ -122,26 +122,29 @@ sub process_cluster{
     }
     
     # for read pairs not belong to split reads, select most likely position
+    # TBD, only output read name at the moment
     @Span_reads_info=();
-    foreach my $read (sort keys %number_of_span_read_belong_to_split_read){
-        push @Span_reads_info, $read if $number_of_span_read_belong_to_split_read{$read}==0;
-    }
-    if(@Span_reads_info>0){
-        my $output_read_pair_count=@Span_reads_info;
-        
-        my $process_line=shift @Span_reads_info;
-        my ($output_chr_breakpoint_1, $output_pos_breakpoint_1, $output_strand_breakpoint_1, $output_chr_breakpoint_2, $output_pos_breakpoint_2, $output_strand_breakpoint_2, $output_junc_type, $output_read_name, $output_cluster_id)=split "\t", $process_line;
-        my $output_read_pairs=$output_read_name;
-        
-        foreach $process_line (@Span_reads_info){
-            my ($process_chr_breakpoint_1, $process_pos_breakpoint_1, $process_strand_breakpoint_1, $process_chr_breakpoint_2, $process_pos_breakpoint_2, $process_strand_breakpoint_2, $process_junc_type, $process_read_name, $process_cluster_id)=split "\t", $process_line;
-            $output_pos_breakpoint_1=$process_pos_breakpoint_1 if ($process_strand_breakpoint_1 eq '+' && $process_pos_breakpoint_1>$output_pos_breakpoint_1) || ($process_strand_breakpoint_1 eq '-' && $process_pos_breakpoint_1<$output_pos_breakpoint_1);
-            $output_pos_breakpoint_2=$process_pos_breakpoint_2 if ($process_strand_breakpoint_2 eq '+' && $process_pos_breakpoint_2>$output_pos_breakpoint_2) || ($process_strand_breakpoint_2 eq '-' && $process_pos_breakpoint_2<$output_pos_breakpoint_2);
-            $output_read_pairs.=",".$process_read_name;
+    if(0>1){
+        foreach my $read (sort keys %number_of_span_read_belong_to_split_read){
+            push @Span_reads_info, $read if $number_of_span_read_belong_to_split_read{$read}==0;
         }
-        
-        say join "\t", ($output_chr_breakpoint_1, $output_pos_breakpoint_1, $output_strand_breakpoint_1, $output_chr_breakpoint_2, $output_pos_breakpoint_2, $output_strand_breakpoint_2, $output_junc_type, $output_cluster_id, "0", $output_read_pair_count, "NA", $output_read_pairs);
-        @Span_reads_info=();
+        if(@Span_reads_info>0){
+            my $output_read_pair_count=@Span_reads_info;
+            
+            my $process_line=shift @Span_reads_info;
+            my ($output_chr_breakpoint_1, $output_pos_breakpoint_1, $output_strand_breakpoint_1, $output_chr_breakpoint_2, $output_pos_breakpoint_2, $output_strand_breakpoint_2, $output_junc_type, $output_read_name, $output_cluster_id)=split "\t", $process_line;
+            my $output_read_pairs=$output_read_name;
+            
+            foreach $process_line (@Span_reads_info){
+                my ($process_chr_breakpoint_1, $process_pos_breakpoint_1, $process_strand_breakpoint_1, $process_chr_breakpoint_2, $process_pos_breakpoint_2, $process_strand_breakpoint_2, $process_junc_type, $process_read_name, $process_cluster_id)=split "\t", $process_line;
+                $output_pos_breakpoint_1=$process_pos_breakpoint_1 if ($process_strand_breakpoint_1 eq '+' && $process_pos_breakpoint_1>$output_pos_breakpoint_1) || ($process_strand_breakpoint_1 eq '-' && $process_pos_breakpoint_1<$output_pos_breakpoint_1);
+                $output_pos_breakpoint_2=$process_pos_breakpoint_2 if ($process_strand_breakpoint_2 eq '+' && $process_pos_breakpoint_2>$output_pos_breakpoint_2) || ($process_strand_breakpoint_2 eq '-' && $process_pos_breakpoint_2<$output_pos_breakpoint_2);
+                $output_read_pairs.=",".$process_read_name;
+            }
+            
+            say join "\t", ($output_chr_breakpoint_1, $output_pos_breakpoint_1, $output_strand_breakpoint_1, $output_chr_breakpoint_2, $output_pos_breakpoint_2, $output_strand_breakpoint_2, $output_junc_type, $output_cluster_id, "0", $output_read_pair_count, "NA", $output_read_pairs);
+            @Span_reads_info=();
+        }
     }
 } 
 

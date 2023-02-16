@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+# 2023-02-14
+
 # 1. function
 # discard duplicate reads
 # get the number of reads that supportes junctions
@@ -54,7 +56,7 @@ while(<IN>){
 }
 close(IN);
 
-say join "\t", ("Chr_left", "Pos_left", "Strand_left", "Chr_right", "Pos_right", "Strand_right", "Read_count");
+say join "\t", ("Chr_breakpoint_1", "Pos_breakpoint_1", "Strand_breakpoint_1", "Chr_breakpoint_2", "Pos_breakpoint_2", "Strand_breakpoint_2", "Read_count");
 foreach my $strand_left (sort keys %read_count){
     foreach my $strand_right (sort keys %{$read_count{$strand_left}}){
         foreach my $chr_left (sort keys %{$read_count{$strand_left}{$strand_right}}){

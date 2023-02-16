@@ -1,24 +1,35 @@
 I. About
-SFyNCS (Somatic Fusions involving Non-Coding Sequences) detects fusion transcripts from pair-end RNA-seq data.
-Version 0.12
+SFyNCS (Somatic Fusions involving Non-Coding Sequences) detects fusion transcripts from pair-end RNA-seq data, please refer to user manual for more detail.
+Version 0.14
 
 
 II. Prerequisites
 1. Software environment
 - Unix/Linux system
+- Python2 (tested v2.7.5, v2.7.11), it can be downloaded at https://www.python.org/downloads or installed with conda (https://anaconda.org/bioconda/python, please specify version when installing).
+- Perl (v5.010 or above), it can be downloaded at https://www.perl.org/get.html or installed with conda (https://anaconda.org/conda-forge/perl).
 - Blat (tested v35, v36), it can be downloaded at http://hgdownload.soe.ucsc.edu/admin/exe or installed with conda (https://anaconda.org/bioconda/blat).
 - Bedtools (tested v2.25.0, v2.26.0, v2.27.1), it can be downloaded at https://github.com/arq5x/bedtools2/releases or installed with conda (https://anaconda.org/bioconda/blat).
 - Bowtie2 (tested v2.1.0, v2.2.5, v2.2.9, v2.3.0, v2.3.2, v2.3.4.3), it can be downloaded at https://sourceforge.net/projects/bowtie-bio/files/bowtie2/ or installed with conda (https://anaconda.org/bioconda/bowtie2).
-- Perl (v5.010 or above), it can be downloaded at https://www.perl.org/get.html or installed with conda (https://anaconda.org/conda-forge/perl).
 - STAR (v2.6.1a or above, tested v2.6.1a, v2.6.1d, v2.7.0f), it can be downloaded at https://github.com/alexdobin/STAR/releases or installed with conda (https://anaconda.org/bioconda/star).
 - Samtools (tested v0.1.19, v1.1, v1.3.1, v1.5), it can be downloaded at https://github.com/samtools/samtools/releases or installed with conda (https://anaconda.org/bioconda/samtools).
-- Tophat (must be v2.1.0), it can be downloaded at http://ccb.jhu.edu/software/tophat/downloads or installed with conda (https://anaconda.org/bioconda/tophat, please specify version when installing).
-
-Note that tophat needs to be v2.1.0 (2.1.1 or 2.0.13 won't work). Follow these steps to install:
-  wget http://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.0.Linux_x86_64.tar.gz
-  tar -zxvf tophat-2.1.0.Linux_x86_64.tar.gz
-  export PATH=$PWD/tophat-2.1.0.Linux_x86_64:$PATH
-  chown u+x tophat-2.1.0.Linux_x86_64/* 
+- TopHat2 (must be v2.1.0), it can be downloaded at http://ccb.jhu.edu/software/tophat/downloads or installed with conda (https://anaconda.org/bioconda/tophat, please specify version when installing).
+  Note that tophat needs to be v2.1.0 (2.1.1 or 2.0.13 won't work). Follow these steps to install:
+    wget http://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.0.Linux_x86_64.tar.gz
+    tar -zxvf tophat-2.1.0.Linux_x86_64.tar.gz
+    export PATH=$PWD/tophat-2.1.0.Linux_x86_64:$PATH
+    chmod u+x tophat-2.1.0.Linux_x86_64/* 
+- It takes 14 minutes to install all below packages using conda:
+  conda create --no-default-packages -n SFyNCS
+  source activate SFyNCS
+  conda install -c anaconda python=2.7.11
+  conda install -c conda-forge perl=5.26.2
+  conda install -c bioconda blat=36
+  conda install -c bioconda bedtools=2.27.1
+  conda install -c bioconda bowtie2=2.3.4.3
+  conda install -c bioconda star=2.7.0f
+  conda install -c bioconda samtools=1.3.1
+  conda install -c bioconda tophat=2.1.0
 
 2. Reference, index and annotation files
 - Reference genome sequence in fasta format
@@ -90,7 +101,7 @@ Note: all files under the example directory are for testing only.
   bash ../run_SFyNCS.sh -p 1 -o demo_output -a toy_gene_annotation.gpe -g toy_reference_genome_sequence.fasta -s star_index -t tophat_index/tophat -d toy_normal_directory toy_pair_end_reads_1.fastq.gz toy_pair_end_reads_2.fastq.gz
 5.2. Using Chimeric.out.junction produced by STAR and fastq.gz files:
   bash ../run_SFyNCS.sh -p 1 -c Chimeric.out.junction -o demo_output -a toy_gene_annotation.gpe -g toy_reference_genome_sequence.fasta -t tophat_index/tophat -d toy_normal_directory toy_pair_end_reads_1.fastq.gz toy_pair_end_reads_2.fastq.gz
-You should get fusions.tsv.gz and fusions_abridged.tsv.gz under demo_output, please make sure the content in these two output files are the same as the files under example.
+It will take 1 minute to run the example. You should get fusions.tsv.gz and fusions_abridged.tsv.gz under demo_output, please make sure the content in these two output files are the same as the files under example.
 
 
 IV. Workflow

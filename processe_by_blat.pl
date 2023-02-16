@@ -5,7 +5,7 @@
 # 1. Function
 # Add blat supported statistics
 # 1.1. split read alignment should span breakpoints in the artifact reference 
-# 1.2. for each junction, take upstream and downstream sequence to construct artifact reference, sequence length is defiend by $length_1_fusion and $length_2_fusion
+# 1.2. for each junction, take upstream and downstream sequence to construct artifact reference, sequence length is defiend by $outside_length_fusion and $inside_length_fusion
 # 1.3. for each read, at least align_percentage of read can be blat
 # 1.4. for each read, select the best pslScore as alignment. If there are more than two alignments have best pslScore, this read will not support breakpoint
 # 1.5. calculate sequence identity after taking --length_for_identity bp flanking sequence and align them with Needleman Wunsch algorithm 
@@ -84,23 +84,23 @@ use File::Basename;
 use lib dirname $0;
 
 my $motif_searching_length=5;
-my $length_1_fusion=1000000; # 1Mb
-my $length_2_fusion=100;
+my $outside_length_fusion=1000000; # 1Mb
+my $inside_length_fusion=100;
 my $length_for_identity=10;
 my $fasta;
 my $align_percentage=0.9; # blat alignment >=read_length*$align_percentage will be kept
 my $min_split_reads=1;
 my $min_total_reads=3;
-my $min_split_read_blat_distance=5;
-my $max_sequence_identity=0.8;
+my $min_split_read_blat_distance="NA";
+my $max_sequence_identity=1;
 my $filter_by_canonical_split_motif="Y";
 
 GetOptions(
     'm|motif_searching_length=i'												=> \$motif_searching_length,
     'f|fasta=s'     																								=> \$fasta,
     'a|align_percentage=f'     													=> \$align_percentage,
-    'i|length_1_fusion=i'     														=> \$length_1_fusion,
-    'o|length_2_fusion=i'     														=> \$length_2_fusion,
+    'o|outside_length_fusion=i'     								=> \$outside_length_fusion,
+    'i|inside_length_fusion=i'     									=> \$inside_length_fusion,
     'l|length_for_identity=i'     										=> \$length_for_identity,
     'p|min_split_reads=i'               				=> \$min_split_reads,
     't|min_total_reads=i'               				=> \$min_total_reads,
@@ -111,8 +111,8 @@ GetOptions(
 )||usage();
 
 die "Please set -f or --fasta" if ! defined $fasta;
-my $breakpoint_1_pos_in_artifact_seq=$length_1_fusion;
-my $breakpoint_2_pos_in_artifact_seq=$length_1_fusion+2*$length_2_fusion+1;
+my $breakpoint_1_pos_in_artifact_seq=$outside_length_fusion;
+my $breakpoint_2_pos_in_artifact_seq=$outside_length_fusion+2*$inside_length_fusion+1;
 
 say join "\t", ("Chr_breakpoint_1", "Pos_breakpoint_1", "Strand_breakpoint_1", "Chr_breakpoint_2", "Pos_breakpoint_2", "Strand_breakpoint_2", "Cluster_id",
     "Split_read_count_(star)", "Read_pair_count_(star)", "Split_read_count_(tophat)", "Potential_split_read_count_(tophat)", "Read_pair_count_(tophat)",
@@ -146,8 +146,8 @@ while(<IN>){
     my @Split_reads_tophat=split ",", $split_reads_tophat;
     my @Split_reads_poential_tophat=split ",", $potential_split_reads_tophat;
     
-    my $artifact_seq_breakpoint_1=&getFlankingSequence($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $length_1_fusion, $length_2_fusion, "upstream");
-    my $artifact_seq_breakpoint_2=&getFlankingSequence($chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $length_1_fusion, $length_2_fusion, "downstream");
+    my $artifact_seq_breakpoint_1=&getFlankingSequence($chr_breakpoint_1, $pos_breakpoint_1, $strand_breakpoint_1, $outside_length_fusion, $inside_length_fusion, "upstream");
+    my $artifact_seq_breakpoint_2=&getFlankingSequence($chr_breakpoint_2, $pos_breakpoint_2, $strand_breakpoint_2, $outside_length_fusion, $inside_length_fusion, "downstream");
     
     my $artifact_seq=$artifact_seq_breakpoint_1.$artifact_seq_breakpoint_2;
     # system failed to ouput long $artifact_seq, use handle instead
@@ -311,7 +311,7 @@ while(<IN>){
     
     next if $split_read_count_blat < $min_split_reads;
     next if ($split_read_count_blat+$read_pair_count_tophat) < $min_total_reads;
-    next if $minimum_blat_distance_breakpoint_1 > $min_split_read_blat_distance || $minimum_blat_distance_breakpoint_2 > $min_split_read_blat_distance;
+    next if ($minimum_blat_distance_breakpoint_1 ne "NA" && $minimum_blat_distance_breakpoint_1 > $min_split_read_blat_distance) || ($minimum_blat_distance_breakpoint_2 ne "NA" && $minimum_blat_distance_breakpoint_2 > $min_split_read_blat_distance);
     next if $filter_by_canonical_split_motif eq "Y" && $is_split_site_contain_canonical_motif ne "Y";
     next if $identity_output > $max_sequence_identity;
     
@@ -450,23 +450,23 @@ sub getDistanceInBlat{
 
 
 sub getFlankingSequence{
-    my ($chr, $pos, $strand, $length_1_fusion, $length_2_fusion, $upstream_or_downstream_segment)=@_;
+    my ($chr, $pos, $strand, $outside_length_fusion, $inside_length_fusion, $upstream_or_downstream_segment)=@_;
     my ($start, $end);
     my $append_N_length=0; # if $start < 1, append N
     if($strand eq '+'){
-        $start=$pos-$length_1_fusion+1;
+        $start=$pos-$outside_length_fusion+1;
         if($start<1){
             $append_N_length=abs($start)+1;
             $start=1;
         }
-        $end=$pos+$length_2_fusion; # end bigger than chr size will generate short sequence
+        $end=$pos+$inside_length_fusion; # end bigger than chr size will generate short sequence
     }else{
-        $start=$pos-$length_2_fusion;
+        $start=$pos-$inside_length_fusion;
         if($start<1){
             $append_N_length=abs($start)+1;
             $start=1;
         }
-        $end=$pos+$length_1_fusion-1; # end bigger than chr size will generate short sequence
+        $end=$pos+$outside_length_fusion-1; # end bigger than chr size will generate short sequence
     }
     
     my $flankingSeq;
@@ -486,7 +486,7 @@ sub getFlankingSequence{
     }
     chomp($flankingSeq);
     
-    my $length_artifact_fa=$length_1_fusion+$length_2_fusion;
+    my $length_artifact_fa=$outside_length_fusion+$inside_length_fusion;
     if($upstream_or_downstream_segment eq "upstream"){
 								if($strand eq '+'){
 												if($append_N_length>0){
@@ -654,8 +654,8 @@ Options:
     -m --motif_searching_length											INT				Splice site motifs (GT in the donor, AAG/CAG/TAG in the acceptor) are searched within this window size of breakpoints [default: $motif_searching_length]
     -f --fasta    																								STR				Reference genome fasta file (must be given)
     -a --align_percentage   														FLOAT		Minimal percentage of bases of the whole read that is alignable by Blat for split reads [default: $align_percentage]
-    -i --length_1_fusion   															INT				Specify the window of breakpoint flanking sequence for artificial reference [default: $length_1_fusion]
-    -o --length_2_fusion   															INT				Specify the window of breakpoint flanking sequence for artificial reference [default: $length_2_fusion]
+    -o --outside_length_fusion   									INT				Specify the window of breakpoint flanking sequence for artificial reference [default: $outside_length_fusion]
+    -i --inside_length_fusion   										INT				Specify the window of breakpoint flanking sequence for artificial reference [default: $inside_length_fusion]
     -l --length_for_identity   											INT				Flanking sequences size of both fusion breakpoints to calculate sequence identity [default: $length_for_identity]
     -p --min_split_reads																		INT				Minimal number of split reads for a fusion transcript to be identified [default: $min_split_reads]
     -t --min_total_reads																		INT				Minimal number of total reads for a fusion transcript to be identified [default: $min_total_reads]

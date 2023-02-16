@@ -2,6 +2,9 @@
 
 # 2022-11-04
 
+# to do
+# drop length_threshold_if_both_mate_are_split_reads in next version
+
 # 1. Function
 # Add tophat supported statistics
 # 1.1. if breakpoint is chr1:100:+ and --overhang_length is 5, read aignned as <= chr1:105 by tophat will support breakpoint. If chr:1:100:-, read aligned as >=chr1:95 will support breakpoint
@@ -77,6 +80,7 @@ GetOptions(
 
 my %hash;
 open IN, "samtools view $ARGV[0] | " or die "Can't open $ARGV[0]:$!";
+#open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
 while(<IN>){
     chomp;
     my ($name, $flag, $chr, $start, $mapq, $ciga, $chr_mate, $start_mate, $tlen, $seq, $qual)=(split "\t",$_)[0..10];

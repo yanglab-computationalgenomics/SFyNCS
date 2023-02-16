@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 2022-11-03
-# version: v0.12
+# 2023-02-14
+# version: v0.14
 
 # default parameter
 thread_number=1
@@ -14,10 +14,9 @@ min_read_pairs=1
 min_total_reads=3
 overhang_length=5
 read_pair_distance=10000
-max_mate_split_read_distance=200
 motif_searching_length_in_blat=5
-length_1_fusion_in_blat=1000000
-length_2_fusion_in_blat=100
+outside_length_in_blat=1000000
+inside_length_in_blat=100
 length_for_identity_in_blat=10
 align_percentage_in_blat=0.9
 max_split_read_blat_distance=10000000
@@ -28,13 +27,13 @@ sd_cutoff=0.1
 filter_in_the_same_gene="Y"
 normal_adjacent_distance=10000
 normal_read_count_cutoff=2
-min_distance_plus_minus=500000
-min_distance_non_plus_minus=50000
+deletion_like_distance=500000
+duplication_like_and_inversion_like_distance=50000
 
 usage(){
  cat << EOF
 Description:
-    This script was used to identify fusion transcripts from pair-end RNA-seq data (version: v0.12).
+    This script was used to identify fusion transcripts from pair-end RNA-seq data (version: v0.14).
         
 Usage ([optional options] <must be provided options>):
     $0 [-p 1 -o output -c Chimeric.out.junction -s star_index] <-a annotation_file> <-g genome_fasta> <-t tophat_index> <read_1.fastq|read_1.fastq.gz> <read_2.fastq|read_2.fastq.gz> 
@@ -54,11 +53,10 @@ Options:
         --min_read_pairs                    INT     Minimal number of read pairs for a fusion transcript to be identified [default: $min_read_pairs]
         --min_total_reads                   INT     Minimal number of total reads for a fusion transcript to be identified [default: $min_total_reads]
         --overhang_length                   INT     Breakpoint overhang length for TopHat [default: $overhang_length]
-        --read_pair_distance                INT     Maximal distance between the TopHat alignment of read pairs and breakpoint [default: $read_pair_distance]
-        --max_mate_split_read_distance      INT     Maximal distance between alignments if both read 1 and read 2 are split reads [default: $max_mate_split_read_distance]       
+        --read_pair_distance                INT     Maximal distance between the TopHat alignment of read pairs and breakpoint [default: $read_pair_distance]      
         --motif_searching_length_in_blat    INT     Splice site motifs (GT in the donor, AAG/CAG/TAG in the acceptor) are searched within this window size of breakpoints [default: $motif_searching_length_in_blat]
-        --length_1_fusion_in_blat           INT     Specify the window of breakpoint flanking sequence for artificial reference [default: $length_1_fusion_in_blat]
-        --length_2_fusion_in_blat           INT     Specify the window of breakpoint flanking sequence for artificial reference [default: $length_2_fusion_in_blat]
+        --outside_length_in_blat           INT     Specify the window of breakpoint flanking sequence for artificial reference [default: $outside_length_in_blat]
+        --inside_length_in_blat           INT     Specify the window of breakpoint flanking sequence for artificial reference [default: $inside_length_in_blat]
         --length_for_identity_in_blat       INT     Flanking sequences size of both fusion breakpoints to calculate sequence identity [default: $length_for_identity_in_blat]
         --align_percentage_in_blat          FLOAT   Minimal percentage of bases of the whole read that is alignable by Blat for split reads [default: $align_percentage_in_blat]
         --max_split_read_blat_distance      INT     Maximal distance between Blat alignment and breakpoints [default: $max_split_read_blat_distance]
@@ -69,8 +67,8 @@ Options:
         --filter_in_the_same_gene           STR     Filter fusions in the same gene [default: $filter_in_the_same_gene]
         --normal_adjacent_distance          INT     Window size to search for breakpoints in normal samples [default: $normal_adjacent_distance]
         --normal_read_count_cutoff          INT     Filter fusions if numbers of reads (discordant pairs or split reads) in normal samples are equal to or more than the specified value [default: $normal_read_count_cutoff]
-        --min_distance_plus_minus           INT     Minimal distance allowed between fusion breakpoints if located in the same chromosome and strand is plus (smaller coordinate) minus (larger coordinate) [default: $min_distance_plus_minus]
-        --min_distance_non_plus_minus       INT     Minimal distance allowed between breakpoints if located in the same chromosome and strand is not plus minus [default: $min_distance_non_plus_minus]
+        --deletion_like_distance           INT     Minimal distance allowed between fusion breakpoints if located in the same chromosome and strand is plus (smaller coordinate) minus (larger coordinate) [default: $deletion_like_distance]
+        --duplication_like_and_inversion_like_distance       INT     Minimal distance allowed between breakpoints if located in the same chromosome and strand is not plus minus [default: $duplication_like_and_inversion_like_distance]
     -h  --help                                      Print this help menu.
 
 Gene annotation format (must have header, start position is 0-base, end position is 1-base):
@@ -88,9 +86,9 @@ EOF
 
 declare -A options=( [h]=help [a:]=annotation_file: [g:]=genome_fasta: [o:]=output_directory: [p:]=thread_number: [s:]=star_index: [t:]=tophat_index: [c:]=chimeric_file: 
     [d:]=normal_junction_dir: [0:]=adjust_adjacent_distance: [1:]=cluster_distance: [2:]=min_split_reads: [3:]=min_read_pairs: [4:]=min_total_reads: [5:]=overhang_length: 
-    [6:]=read_pair_distance: [7:]=max_mate_split_read_distance: [8:]=motif_searching_length_in_blat: [9:]=length_1_fusion_in_blat: [10:]=length_2_fusion_in_blat: 
-    [11:]=length_for_identity_in_blat: [12:]=align_percentage_in_blat: [13:]=max_split_read_blat_distance: [14:]=max_sequence_identity_in_blat: [15:]=filter_by_canonical_splice_motif: 
-    [16:]=length_in_sd: [17:]=sd_cutoff: [18:]=filter_in_the_same_gene: [19:]=normal_adjacent_distance: [20:]=normal_read_count_cutoff: [21:]=min_distance_plus_minus: [22:]=min_distance_non_plus_minus: )
+    [6:]=read_pair_distance: [7:]=motif_searching_length_in_blat: [8:]=outside_length_in_blat: [9:]=inside_length_in_blat: 
+    [10:]=length_for_identity_in_blat: [11:]=align_percentage_in_blat: [12:]=max_split_read_blat_distance: [13:]=max_sequence_identity_in_blat: [14:]=filter_by_canonical_splice_motif: 
+    [15:]=length_in_sd: [16:]=sd_cutoff: [17:]=filter_in_the_same_gene: [18:]=normal_adjacent_distance: [19:]=normal_read_count_cutoff: [20:]=deletion_like_distance: [21:]=duplication_like_and_inversion_like_distance: )
 
 # create string of short options
 opt_short=$(printf "%s" "${!options[@]}")
@@ -267,8 +265,8 @@ perl $toolDir/remove_duplicate_reads.pl no_multiple_mapped.tsv >temp_no_duplicat
 head -n 1 temp_no_duplicate.tsv >no_duplicate.tsv
 sort temp_no_duplicate.tsv | uniq | grep -v "Chr_breakpoint_1" >>no_duplicate.tsv
 rm temp_no_duplicate.tsv
-perl $toolDir/merge_ajacent_breakpoints.pl -a $adjust_adjacent_distance no_duplicate.tsv >merge_ajacent.tsv
-perl $toolDir/cluster_discordant_reads.pl -w $cluster_distance merge_ajacent.tsv >cluster.tsv
+perl $toolDir/adjust_ajacent_breakpoints.pl -a $adjust_adjacent_distance no_duplicate.tsv >adjust_ajacent.tsv
+perl $toolDir/cluster_discordant_reads.pl -w $cluster_distance adjust_ajacent.tsv >cluster.tsv
 # generate temp_cluster.bed, which was used in calculating SD
 awk 'BEGIN{FS=OFS="\t"} NR>1{print $1,$2-1,$2,$3,$7,$8,$9; print $4,$5-1,$5,$6,$7,$8,$9;}' cluster.tsv | sort -k1,1 -k2,2n | uniq >temp_cluster.bed
 perl $toolDir/identify_fusion_candidates_from_cluster_reads.pl cluster.tsv >preliminary_candidates.tsv
@@ -276,9 +274,12 @@ perl $toolDir/identify_fusion_candidates_from_cluster_reads.pl cluster.tsv >prel
 awk -v min_split_reads=$min_split_reads -v min_read_pairs=$min_read_pairs -v min_total_reads=$min_total_reads 'NR==1 || ($9>=min_split_reads && $10>=min_read_pairs && ($9+$10)>=min_total_reads)' preliminary_candidates.tsv >temp.tsv
 mv temp.tsv preliminary_candidates.tsv
 # filter by fusion distance to speed up
-awk -v min_distance_plus_minus=$min_distance_plus_minus -v min_distance_non_plus_minus=$min_distance_non_plus_minus 'NR==1{print $0;} $1!=$4{print $0;} $1==$4{if($3=="+" && $6=="-"){if(($5-$2)>=min_distance_plus_minus) print $0;} else{if(($5-$2)>=min_distance_non_plus_minus ) print $0;}}' preliminary_candidates.tsv >temp.tsv
+awk -v deletion_like_distance=$deletion_like_distance -v duplication_like_and_inversion_like_distance=$duplication_like_and_inversion_like_distance '$1!=$4{print $0;} $1==$4{if($3=="+" && $6=="-"){if(($5-$2)>=deletion_like_distance) print $0;} else{if(($5-$2)>=duplication_like_and_inversion_like_distance ) print $0;}}' preliminary_candidates.tsv >temp.tsv
 mv temp.tsv preliminary_candidates.tsv
-rm cluster.tsv format_chimeric.tsv merge_ajacent.tsv no_duplicate.tsv no_multiple_mapped.tsv
+# remove chrMT (this step can be dropped in further version)
+grep -v "chrM" preliminary_candidates.tsv >temp.tsv
+mv temp.tsv preliminary_candidates.tsv
+rm cluster.tsv format_chimeric.tsv adjust_ajacent.tsv no_duplicate.tsv no_multiple_mapped.tsv
 rm -rf star_output
 
 
@@ -307,7 +308,7 @@ tophat --no-coverage-search \
     selected_discordant_reads_1.fastq selected_discordant_reads_2.fastq
 ln -s tophat_output/accepted_hits.bam tophat.bam
 samtools index tophat.bam
-perl $toolDir/processe_by_tophat.pl -o $overhang_length -w $cluster_distance -l $max_mate_split_read_distance -d $read_pair_distance -p $min_split_reads -r $min_read_pairs -t $min_total_reads tophat.bam preliminary_candidates.tsv >processed_with_tophat.tsv
+perl $toolDir/processe_by_tophat.pl -o $overhang_length -w $cluster_distance -d $read_pair_distance -p $min_split_reads -r $min_read_pairs -t $min_total_reads tophat.bam preliminary_candidates.tsv >processed_with_tophat.tsv
 rm -rf tophat* preliminary_candidates.tsv 
 
 
@@ -342,7 +343,7 @@ for i in {1..50}
         cd chunk_${i}
         ln -s ../selected_discordant_reads_1.fastq .
         ln -s ../selected_discordant_reads_2.fastq .
-        perl $toolDir/processe_by_blat.pl -f $genome_fasta -m $motif_searching_length_in_blat -c $filter_by_canonical_splice_motif -a $align_percentage_in_blat -i $length_1_fusion_in_blat -o $length_2_fusion_in_blat -p $min_split_reads -t $min_total_reads -d $max_split_read_blat_distance -l $length_for_identity_in_blat -e $max_sequence_identity_in_blat processed_with_tophat.tsv >processed_with_blat.tsv
+        perl $toolDir/processe_by_blat.pl -f $genome_fasta -m $motif_searching_length_in_blat -c $filter_by_canonical_splice_motif -a $align_percentage_in_blat -o $outside_length_in_blat -i $inside_length_in_blat -p $min_split_reads -t $min_total_reads -d $max_split_read_blat_distance -l $length_for_identity_in_blat -e $max_sequence_identity_in_blat processed_with_tophat.tsv >processed_with_blat.tsv
         cd ..
     done
 
