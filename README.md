@@ -1,24 +1,40 @@
 ## I. About
-Somatic Fusions involving Non-Coding Sequences (SFyNCS) detects both coding and non-coding fusion transcripts from paired-end RNA-seq data. It uses discordant read pairs and split reads to detect the fusions and refine fusion breakpoints to basepair resolution.
+Somatic Fusions involving Non-Coding Sequences (SFyNCS) detects fusions involving both protein-coding genes and non-coding sequences from paired-end RNA-seq data. It uses discordant read pairs and split reads to detect the fusions and refine fusion breakpoints to the basepair resolution. Please refer to user manual for more detail.
 
 ## II. Prerequisites
 ### 1. Software environment
 - Unix/Linux system
+- Ptyhon2 (tested v2.7.5, v2.7.11), can be downloaded at https://www.python.org/downloads or installed with conda (https://anaconda.org/anaconda/python, please specify version when installing).
+- Perl (v5.010 or above), can be downloaded at https://www.perl.org/get.html or installed with conda (https://anaconda.org/conda-forge/perl).
 - Blat (tested v35, v36), can be downloaded at http://hgdownload.soe.ucsc.edu/admin/exe or installed with conda (https://anaconda.org/bioconda/blat).
 - Bedtools (tested v2.25.0, v2.26.0, v2.27.1), can be downloaded at https://github.com/arq5x/bedtools2/releases or installed with conda (https://anaconda.org/bioconda/bedtools).
 - Bowtie2 (tested v2.1.0, v2.2.5, v2.2.9, v2.3.0, v2.3.2, v2.3.4.3), can be downloaded at https://sourceforge.net/projects/bowtie-bio/files/bowtie2/ or installed with conda (https://anaconda.org/bioconda/bowtie2).
 - Perl (v5.010 or above), can be downloaded at https://www.perl.org/get.html or installed with conda (https://anaconda.org/conda-forge/perl).
 - STAR (v2.6.1a or above, tested v2.6.1a, v2.6.1d, v2.7.0f), can be downloaded at https://github.com/alexdobin/STAR/releases or installed with conda (https://anaconda.org/bioconda/star).
 - Samtools (tested v0.1.19, v1.1, v1.3.1, v1.5), can be downloaded at https://github.com/samtools/samtools/releases or installed with conda (https://anaconda.org/bioconda/samtools).
-- TopHat (must be v2.1.0), can be downloaded at http://ccb.jhu.edu/software/tophat/downloads or installed with conda (https://anaconda.org/bioconda/tophat, please specify version when installing).  
+- TopHat2 (must be v2.1.0), can be downloaded at http://ccb.jhu.edu/software/tophat/downloads or installed with conda (https://anaconda.org/bioconda/tophat, please specify version when installing).  
 Note that TopHat needs to be v2.1.0 (2.1.1 or 2.0.13 won't work).            
-Follow these steps to install:
+Follow these steps to install TopHat2:
    ```
    wget http://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.0.Linux_x86_64.tar.gz
    tar -zxvf tophat-2.1.0.Linux_x86_64.tar.gz
    export PATH=$PWD/tophat-2.1.0.Linux_x86_64:$PATH
    chmod u+x tophat-2.1.0.Linux_x86_64/*
    ```
+- It will take 14 minutes to install all above tools using conda:
+   ```
+   conda create --no-default-packages -n SFyNCS
+   source activate SFyNCS
+   conda install -c anaconda python=2.7.11
+   conda install -c conda-forge perl=5.26.2
+   conda install -c bioconda blat=36
+   conda install -c bioconda bedtools=2.27.1
+   conda install -c bioconda bowtie2=2.3.4.3
+   conda install -c bioconda star=2.7.0f
+   conda install -c bioconda samtools=1.3.1
+   conda install -c bioconda tophat=2.1.0
+   ```
+   
 ### 2. Reference, index and annotation files
 - 2.1. Reference genome sequence in fasta format
 - 2.2. STAR index of the reference genome (can be skipped if Chimeric.out.junction is available). The STAR index can be built with the following command. We suggest using chr1-chr22, chrX, chrY and chrM only. Please specify the number_of_thread in the command below.
@@ -26,7 +42,7 @@ Follow these steps to install:
    mkdir -p /path_to/star_index_dir
    STAR --runThreadN number_of_thread --runMode genomeGenerate --genomeDir /path_to/star_index_dir --genomeFastaFiles /path_to/genome.fasta
    ```
-- 2.3. TopHat/Bowtie2 index of the reference genome. The TopHat/Bowtie2 index can be built with the following command. Please specify file_prefix in the commands below.
+- 2.3. TopHat2/Bowtie2 index of the reference genome. The TopHat/Bowtie2 index can be built with the following command. Please specify file_prefix in the commands below.
    ```
    mkdir -p /path_to/tophat_index_dir
    bowtie2-build /path_to/genome.fasta /path_to/tophat_index_dir/file_prefix
@@ -144,6 +160,7 @@ ln -s $PWD/toy_reference_genome_sequence.fasta $PWD/tophat_index/tophat.fa
     ```
     bash ../run_SFyNCS.sh -p 1 -c Chimeric.out.junction -o demo_output -a toy_gene_annotation.gpe -g toy_reference_genome_sequence.fasta -t tophat_index/tophat -d toy_normal_directory toy_pair_end_reads_1.fastq.gz toy_pair_end_reads_2.fastq.gz
     ```
+It will take 1 minute to run the example. Users should get fusions.tsv.gz and fusions_abridged.tsv.gz under demo_output, please make sure the content in these two output files is the same as the files under example.
 
 ## IV. Workflow
 ### 1. Installation  
@@ -180,25 +197,24 @@ SFyNCS can be run by the following commands. Users can further provide "-p threa
          --cluster_distance                  INT      Split reads and read pairs within this distance will be clustered together [default: 1000000]
          --min_split_reads                   INT      Minimal number of split reads for a fusion transcript to be identified [default: 1]
          --min_read_pairs                    INT      Minimal number of read pairs for a fusion transcript to be identified [default: 1]
-         --min_total_reads                   INT      Minimal number of total reads for a fusion transcript to be identified [default: 3]
+         --min_total_reads                   INT      Minimal number of total reads (split reads and discordant read pairs combined) for a fusion transcript to be identified [default: 3]
          --overhang_length                   INT      Breakpoint overhang length for TopHat [default: 5]
          --read_pair_distance                INT      Maximal distance between the TopHat alignment of read pairs and breakpoint [default: 10000]
-         --max_mate_split_read_distance      INT      Maximal distance between alignments if both read 1 and read 2 are split reads [default: 200]
          --motif_searching_length_in_blat    INT      Splice site motifs (GT in the donor, AAG/CAG/TAG in the acceptor) are searched within this window size of breakpoints [default: 5]
-         --length_1_fusion_in_blat           INT      Specify the window of breakpoint flanking sequence for artificial reference [default: 1000000]
-         --length_2_fusion_in_blat           INT      Specify the window of breakpoint flanking sequence for artificial reference [default: 100]
+         --outside_length_in_blat            INT      Specify the window of breakpoint flanking sequence for artificial reference [default: 1000000]
+         --inside_length_in_blat             INT      Specify the window of breakpoint flanking sequence for artificial reference [default: 100]
          --length_for_identity_in_blat       INT      Flanking sequences size of both fusion breakpoints to calculate sequence identity [default: 10]
          --align_percentage_in_blat          FLOAT    Minimal percentage of bases of the whole read that is alignable by Blat for split reads [default: 0.9]
-         --max_split_read_blat_distance      INT      Maximal distance between Blat alignment and breakpoints [default: 5]
+         --max_split_read_blat_distance      INT      Distance between BLAT and STAR alignments of split reads [default: NA, filter not applied]
          --max_sequence_identity_in_blat     FLOAT    Maximal sequence identity between flanking sequences of two fusion breakpoints [default: 0.8]
          --filter_by_canonical_splice_motif  STR      Filter by canonical splice site motif [default: Y]
          --length_in_sd                      INT      Breakpoint flanking size to calculate standard deviation [default: 100]
-         --sd_cutoff                         FLOAT    Standard deviation cutoff to filter fusions [default: 0.15]
+         --sd_cutoff                         FLOAT    Standard deviation cutoff to filter fusions [default: 0.1]
          --filter_in_the_same_gene           STR      Filter fusions in the same gene [default: Y]
-         --normal_adjacent_distance          INT      Window size to search for breakpoints in normal samples [default: 500]
+         --normal_adjacent_distance          INT      Window size to search for breakpoints in normal samples [default: 10000]
          --normal_read_count_cutoff          INT      Filter fusions if numbers of reads (discordant pairs or split reads) in normal samples are equal to or more than the specified value [default: 2]
-         --min_distance_plus_minus           INT      Minimal distance allowed between fusion breakpoints if located in the same chromosome and strand is plus (smaller coordinate) minus (larger coordinate) [default: 500000]
-         --min_distance_non_plus_minus       INT      Minimal distance allowed between breakpoints if located in the same chromosome and strand is not plus minus [default: 100000]
+         --deletion_like_distance            INT      Minimal distance allowed between fusion breakpoints for deletion-like fusions [default: 500000]
+         --duplication_like_and_inversion_like_distance       INT      Minimal distance allowed between breakpoints for duplication-like and inversion-like fusions [default: 100000]
    ```
  
  ### 3. Output
