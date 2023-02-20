@@ -4,6 +4,8 @@
 
 # to do
 # drop length_threshold_if_both_mate_are_split_reads in next version
+# add "next if $chr_read ne $chr_breakpoint_1 && $chr_read ne $chr_breakpoint_2" in (@tophat_read_1==0 || @tophat_read_2==0) and (tophat_align==1);
+# change my ($split_reads_tophat, $read_pairs_tophat)=("NA") x 3; and my ($split_read_count_tophat, $read_pair_count_tophat)=(0) x 3; to my ($split_reads_tophat, $read_pairs_tophat)=("NA") x 2; and my ($split_read_count_tophat, $read_pair_count_tophat)=(0) x 2;
 
 # 1. Function
 # Add tophat supported statistics
@@ -258,7 +260,6 @@ while(<IN>){
             if(@tophat_align==1){ # may split read
                 $tophat_align[0]=~/(.*),(.*),(.*)/;
                 my ($chr_read, $start_read, $end_read)=($1, $2, $3);
-                next if $chr_read ne $chr_breakpoint_1 && $chr_read ne $chr_breakpoint_2;
                 # compare read to breakpoints
                 my ($is_breakpoint_1_support_breakpoint, $is_breakpoint_2_support_breakpoint)=(0) x 2;
                 $is_breakpoint_1_support_breakpoint=&compareSplitReadToBreakpoint($pos_breakpoint_1, $strand_breakpoint_1, $start_read, $end_read);
