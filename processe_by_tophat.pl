@@ -258,6 +258,7 @@ while(<IN>){
             if(@tophat_align==1){ # may split read
                 $tophat_align[0]=~/(.*),(.*),(.*)/;
                 my ($chr_read, $start_read, $end_read)=($1, $2, $3);
+                next if $chr_read ne $chr_breakpoint_1 && $chr_read ne $chr_breakpoint_2;
                 # compare read to breakpoints
                 my ($is_breakpoint_1_support_breakpoint, $is_breakpoint_2_support_breakpoint)=(0) x 2;
                 $is_breakpoint_1_support_breakpoint=&compareSplitReadToBreakpoint($pos_breakpoint_1, $strand_breakpoint_1, $start_read, $end_read);
