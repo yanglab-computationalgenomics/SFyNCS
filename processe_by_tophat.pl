@@ -6,6 +6,9 @@
 # drop length_threshold_if_both_mate_are_split_reads in next version
 # add "next if $chr_read ne $chr_breakpoint_1 && $chr_read ne $chr_breakpoint_2" in (@tophat_read_1==0 || @tophat_read_2==0) and (tophat_align==1);
 # change my ($split_reads_tophat, $read_pairs_tophat)=("NA") x 3; and my ($split_read_count_tophat, $read_pair_count_tophat)=(0) x 3; to my ($split_reads_tophat, $read_pairs_tophat)=("NA") x 2; and my ($split_read_count_tophat, $read_pair_count_tophat)=(0) x 2;
+# change ($is_breakpoint_1_support_breakpoint, $is_breakpoint_2_support_breakpoint) to ($is_breakpoint_1_support_breakpoint_read_1, $is_breakpoint_2_support_breakpoint_read_1, $is_breakpoint_1_support_breakpoint_read_2, $is_breakpoint_2_support_breakpoint_read_2) and
+#    ($is_breakpoint_1_support_breakpoint==1 || $is_breakpoint_2_support_breakpoint==1) to (($is_breakpoint_1_support_breakpoint_read_1==1 && $is_breakpoint_1_support_breakpoint_read_2==1) || ($is_breakpoint_2_support_breakpoint_read_1==1 && ($is_breakpoint_2_support_breakpoint_read_2==1))
+#    to get potential_split_reads_tophat when @tophat_read_1==1 && @tophat_read_2==1
 
 # 1. Function
 # Add tophat supported statistics
