@@ -313,7 +313,7 @@ rm -rf chunk* temp_cluster.bed
 
 # 4. filter by splicing motif
 echo -e "\nStep 4: Filtering by splicing motif"
-$toolDir/filter_fusion_by_splicing_motif.pl -f $genome_fasta -m $motif_searching_length -c $filter_by_canonical_splice_motif fusions_filtered_by_standard_deviation.tsv >fusions_filtered_by_splicing_motif.tsv
+perl $toolDir/filter_fusion_by_splicing_motif.pl -f $genome_fasta -m $motif_searching_length -c $filter_by_canonical_splice_motif fusions_filtered_by_standard_deviation.tsv >fusions_filtered_by_splicing_motif.tsv
 
 
 # 5. annotate and filter fusion located in the same gene
