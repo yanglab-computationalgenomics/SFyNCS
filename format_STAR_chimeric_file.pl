@@ -61,9 +61,9 @@ $ARGV[0]='-' unless defined $ARGV[0];
 open IN, $ARGV[0] or die "Can't open $ARGV[0]:$!";
 
 say join "\t", ("Chr_breakpoint_1", "Pos_breakpoint_1", "Strand_breakpoint_1", "CIGAR_breakpoint_1", "Chr_breakpoint_2", "Pos_breakpoint_2", "Strand_breakpoint_2", "CIGAR_breakpoint_2", "Junction_type", "Read_name");
-# input didn't have header
 while(<IN>){
     chomp;
+    next if $_=~/^chr_donorA/; # in case have header 
     next if $_=~/^#/;
     my ($chr_d, $rst_d, $strand_d, $chr_a, $rst_a, $strand_a, $junc_type, $rep_len_d, $rep_len_a, $read_name, $align_d, $cigar_d, $align_a, $cigar_a)=split "\t",$_;
     $chr_a="chr".$chr_a if $chr_a!~/^chr/;
