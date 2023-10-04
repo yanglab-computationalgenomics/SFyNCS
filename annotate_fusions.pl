@@ -822,15 +822,15 @@ sub getFlankingSequence{
     my $artifact_coordinate=$chr.":".$start."-".$end;
     if($upstream_or_downstream_segment eq "upstream"){
 								if($strand eq '+'){
-												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print output;}'`;
+												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print toupper(output);}'`;
 								}else{
-												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print output;}' | rev | tr 'ACGT' 'TGCA'`;
+												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print toupper(output);}' | rev | tr 'ACGT' 'TGCA'`;
 								}
     }else{
 								if($strand eq '+'){
-												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print output;}' | rev | tr 'ACGT' 'TGCA'`;
+												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print toupper(output);}' | rev | tr 'ACGT' 'TGCA'`;
 								}else{
-												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print output;}'`;
+												$flankingSeq=`samtools faidx $fasta $artifact_coordinate | awk 'NR==2{output=\$0;} NR>2{output=output""\$0;} END{print toupper(output);}'`;
 								}
     }
     chomp($flankingSeq);
