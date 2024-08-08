@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
-# 2024-08-0 & 2023-03-08
-# fix frame annotation bug: code in acceptor part
+# 2023-03-08
 
 # 1. Function
 # Annotate fusions
@@ -683,13 +682,13 @@ sub get_gene_name_and_type{
                     if($donor_or_acceptor eq "donor"){
                         if($transcript_strand eq '+'){ # gene strand
                             if($Exon_starts[$fusion_location_index]<$cds_start){
-                                $temp_extra_bases=$pos_breakpoint-$cds_start+$Exon_frames[$fusion_location_index]; # $Exon_frames[$fusion_location_index] should be 0
+                                $temp_extra_bases=$pos_breakpoint-$cds_start+$Exon_frames[$fusion_location_index];
                             }else{
                                 $temp_extra_bases=$pos_breakpoint-$Exon_starts[$fusion_location_index]+$Exon_frames[$fusion_location_index];
                             }
                         }else{
                             if($Exon_ends[$fusion_location_index]>$cds_end){
-                                $temp_extra_bases=$cds_end-$pos_breakpoint+1+$Exon_frames[$fusion_location_index]; # $Exon_frames[$fusion_location_index] should be 0
+                                $temp_extra_bases=$cds_end-$pos_breakpoint+1+$Exon_frames[$fusion_location_index];
                             }else{
                                 $temp_extra_bases=$Exon_ends[$fusion_location_index]-$pos_breakpoint+1+$Exon_frames[$fusion_location_index];
                             }
@@ -697,15 +696,15 @@ sub get_gene_name_and_type{
                     }else{ # acceptor
                         if($transcript_strand eq '+'){ # gene strand
                             if($Exon_starts[$fusion_location_index]<$cds_start){
-                                $temp_extra_bases=$pos_breakpoint-$cds_start+$Exon_frames[$fusion_location_index]; # $Exon_frames[$fusion_location_index] should be 0 
+                                $temp_extra_bases=$pos_breakpoint-$cds_start-1+$Exon_frames[$fusion_location_index];
                             }else{
-                                $temp_extra_bases=$pos_breakpoint-$Exon_starts[$fusion_location_index]+$Exon_frames[$fusion_location_index];
+                                $temp_extra_bases=$pos_breakpoint-$Exon_starts[$fusion_location_index]-1+$Exon_frames[$fusion_location_index];
                             }
                         }else{
                             if($Exon_ends[$fusion_location_index]>$cds_end){
-                                $temp_extra_bases=$cds_end-$pos_breakpoint+1+$Exon_frames[$fusion_location_index]; # $Exon_frames[$fusion_location_index] should be 0
+                                $temp_extra_bases=$cds_end-$pos_breakpoint+$Exon_frames[$fusion_location_index];
                             }else{
-                                $temp_extra_bases=$Exon_ends[$fusion_location_index]-$pos_breakpoint+1+$Exon_frames[$fusion_location_index];
+                                $temp_extra_bases=$Exon_ends[$fusion_location_index]-$pos_breakpoint+$Exon_frames[$fusion_location_index];
                             } 
                         }
                     }
